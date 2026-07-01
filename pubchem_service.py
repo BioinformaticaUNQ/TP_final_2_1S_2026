@@ -1,1 +1,0 @@
-from services.pubchem_service import Agrotoxico, PubChemService, fetch_compound

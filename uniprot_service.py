@@ -1,1 +1,0 @@
-from services.uniprot_service import ProteinaOrganismoModelo, UniProtService, fetch_protein
