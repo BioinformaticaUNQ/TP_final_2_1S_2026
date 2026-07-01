@@ -1,17 +1,10 @@
-import re
-from pathlib import Path
-
 import click
-import requests
+from pathlib import Path
+import re
+
+from crossref_service import fetch_doi
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/[^\s]+$")
-
-url_crossref = "https://api.crossref.org"
-endpoint_works = f"{url_crossref}/works/"
-
-
-def doi_to_url(doi):
-    return f"{endpoint_works}{doi}"
 
 
 class InputType(click.ParamType):
@@ -29,24 +22,6 @@ class InputType(click.ParamType):
 
 
 INPUT = InputType()
-
-
-class Articulo:
-    def __init__(self, doi):
-        self.doi = doi
-        self.titulo = None
-        self.autores = []
-        self.año = None
-        self.revista = None
-
-    def toJson(self):
-        return {
-            "DOI": self.doi,
-            "Título": self.titulo,
-            "Autores": self.autores,
-            "Año de Publicacion": self.año,
-            "Revista": self.revista,
-        }
 
 
 class ProteinaOrganismoModelo:
@@ -68,33 +43,6 @@ class Agrotoxico:
         self.valor_unidad = valor_unidad
         self.metodo_experimental = metodo_experimental
         self.fuente_dato = fuente_dato
-
-
-def fetch_doi(doi):
-    url = doi_to_url(doi)
-    response = requests.get(url)
-
-    if response.status_code == 200:
-        data = response.json()
-        articulo = Articulo(doi)
-
-        articulo.titulo = data["message"]["title"][0]
-        articulo.revista = data["message"]["container-title"][0]
-
-        if "published-print" in data["message"]:
-            articulo.año = data["message"]["published-print"]["date-parts"][0][0]
-        elif "published-online" in data["message"]:
-            articulo.año = data["message"]["published-online"]["date-parts"][0][0]
-
-        for autor in data["message"]["author"]:
-            nombre = autor.get("given", "")
-            apellido = autor.get("family", "")
-            articulo.autores.append(f"{nombre} {apellido}")
-
-        return articulo
-    else:
-        click.echo(f"Error al obtener datos para DOI {doi}: {response.status_code}", err=True)
-        return None
 
 
 @click.command()

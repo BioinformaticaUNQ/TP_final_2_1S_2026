@@ -1,7 +1,9 @@
 biopython>=1.84
-click
-pandas
-requests
-PyPDF2
-tabula-py
+click>=8.1
 loguru
+pandas
+pdfplumber
+PyPDF2
+requests
+tabula-py
+pytest
