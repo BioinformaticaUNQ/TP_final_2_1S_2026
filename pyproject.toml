@@ -26,4 +26,4 @@ tp-bioinfo = "app:main"
 test = ["pytest"]
 
 [tool.setuptools]
-py-modules = ["app", "crossref_service", "pdf_parser"]
+py-modules = ["app", "crossref_service", "pdf_parser", "pubchem_service", "uniprot_service"]

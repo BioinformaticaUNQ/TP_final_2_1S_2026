@@ -29,6 +29,12 @@ Ejecutar la CLI instalada:
 tp-bioinfo 10.1042/bj3180001
 ```
 
+Ejecutar el script de ejemplo:
+
+```bash
+python scripts/cli_example.py
+```
+
 Ejecutar tests:
 
 ```bash
