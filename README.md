@@ -2,7 +2,7 @@
 
 ## Guia de Uso
 
-Este proyecto se puede instalar con `setuptools` usando `pip` dentro de un entorno virtual.
+Este proyecto se instala con `setuptools` usando `pip` dentro de un entorno virtual. Ese es el flujo principal de trabajo.
 
 Crear y activar un entorno virtual:
 
@@ -41,7 +41,7 @@ Ejecutar tests:
 pytest -q
 ```
 
-Tambien se puede seguir usando Docker, pero el empaquetado principal queda basado en `setuptools` y `pip`.
+Tambien se puede seguir usando Docker, pero queda como alternativa para reproducir la ejecucion en contenedor.
 
 Este proyecto también está preparado para ejecutar Python y sus dependencias dentro de Docker.
 
@@ -63,7 +63,7 @@ Ese comando levanta una verificación básica de que Python y las dependencias i
 
 Además del uso directo con `docker build` y `docker run`, el proyecto también se puede levantar con Docker Compose.
 
-Comparado con `setuptools` + `venv`, Docker Compose sirve para aislar la ejecución completa en un contenedor reproducible. `setuptools` deja el proyecto instalable como paquete Python real, más simple para desarrollo local, pruebas y ejecución de la CLI en una venv.
+Comparado con `setuptools` + `venv`, Docker Compose sirve para aislar la ejecución completa en un contenedor reproducible. `setuptools` deja el proyecto instalable como paquete Python real y es el camino recomendado para desarrollo local, pruebas y ejecución de la CLI en una venv.
 
 Construir y ejecutar con Compose:
 
@@ -78,6 +78,21 @@ docker compose run --rm app
 ```
 
 El servicio `app` está definido para construir la imagen local y ejecutar `app.py` dentro del contenedor.
+
+## Estructura
+
+La estructura principal queda separada en tres partes:
+
+```text
+app.py
+src/
+	services/
+	models/
+scripts/
+tests/
+```
+
+`src/services` agrupa los clientes externos, `src/models` agrupa los modelos de datos y `app.py` queda como punto de entrada de la CLI.
 
 ## Resumen de verificación
 
