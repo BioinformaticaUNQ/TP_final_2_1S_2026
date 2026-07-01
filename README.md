@@ -17,3 +17,21 @@ docker run --rm tp-bioinfo
 ```
 
 Ese comando levanta una verificación básica de que Python y las dependencias instaladas cargan bien dentro del contenedor.
+
+## Docker Compose
+
+Además del uso directo con `docker build` y `docker run`, el proyecto también se puede levantar con Docker Compose.
+
+Construir y ejecutar con Compose:
+
+```bash
+docker compose up --build
+```
+
+Ejecutar solo el servicio y salir al terminar la verificación:
+
+```bash
+docker compose run --rm app
+```
+
+El servicio `app` está definido para construir la imagen local y ejecutar `app.py` dentro del contenedor.
