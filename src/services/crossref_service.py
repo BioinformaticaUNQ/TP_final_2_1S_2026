@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import requests
+from loguru import logger
 
 
 @dataclass
@@ -27,11 +28,21 @@ class CrossrefService:
     BASE_URL = "https://api.crossref.org/works"
 
     def fetch_doi(self, doi: str) -> Articulo | None:
+        if not doi:
+            logger.warning("DOI vacío recibido.")
+            return None
+
         url = f"{self.BASE_URL}/{doi}"
-        response = requests.get(url)
+        logger.info(f"Consultando Crossref para el DOI: {doi}")
+
+        try:
+            response = requests.get(url, timeout=30)
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Fallo de red al consultar Crossref: {e}")
+            return None
 
         if response.status_code != 200:
-            print(f"Error al obtener datos para DOI {doi}: {response.status_code}")
+            logger.error(f"Error {response.status_code} en Crossref para DOI {doi}")
             return None
 
         data = response.json()
@@ -54,6 +65,7 @@ class CrossrefService:
             apellido = autor.get("family", "")
             articulo.autores.append(f"{nombre} {apellido}".strip())
 
+        logger.success(f"Datos obtenidos de Crossref: {articulo.titulo}")
         return articulo
 
 

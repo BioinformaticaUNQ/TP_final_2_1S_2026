@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pdfplumber
 
-DOI_RE = re.compile(r"10\.\d{4,9}/[^\s\"<>]+")
+DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:a-zA-Z0-9]+")
 
 ORGANISM_PATTERNS = [
     re.compile(r"\b([A-Z][a-z]+ [a-z]{3,})\s*\(([A-Za-z ]+)\)"),
@@ -39,9 +39,13 @@ ACRONYM_NEAR_LIPOCALIN_RE = re.compile(
     r"lipocalin[\w\s\-]{0,25}?\(([A-Z][A-Z0-9]{1,7})\)", re.IGNORECASE
 )
 
-AGROTOXICO_KEYWORDS = [
+AGROTOXICOS_ESPECIFICOS = [
     "atrazine", "atrazina", "imidacloprid", "chlorpyrifos", "clorpirifos",
     "glyphosate", "glifosato", "alachlor", "malathion", "permethrin",
+    "flonicamid", "avermectin", "deltamethrin",
+]
+
+FAMILIAS_Y_GENERALES = [
     "neonicotinoid", "neonicotinoide", "triazine", "triazina",
     "herbicide", "herbicida", "pesticide", "pesticida", "insecticide", "insecticida",
 ]
@@ -75,6 +79,7 @@ class ExtractedArticleData:
 
 class PdfParser:
     PDB_RE = re.compile(r"\b(?:PDB\s*(?:ID|code|entry)?\s*[:\-]?\s*)([1-9][A-Za-z0-9]{3})\b", re.IGNORECASE)
+    TITLE_IGNORE = ("doi", "abstract", "resumen", "university", "copyright", "downloaded", "author", "issn", "journal")
 
     def parse(self, path: str | Path) -> ExtractedArticleData:
         path = Path(path)
@@ -109,8 +114,8 @@ class PdfParser:
 
     def _extract_title(self, path: Path, texto: str) -> str | None:
         lines = [line.strip() for line in texto.splitlines() if line.strip()]
-        for line in lines[:15]:
-            if len(line) > 20 and not line.lower().startswith(("doi", "abstract", "resumen")):
+        for line in lines[:20]:
+            if len(line) > 20 and not line.lower().startswith(self.TITLE_IGNORE):
                 return line
         return path.stem
 
@@ -150,7 +155,7 @@ class PdfParser:
     def _extract_agrotoxicos(self, texto: str) -> list[str]:
         found = set()
         lower = texto.lower()
-        for keyword in AGROTOXICO_KEYWORDS:
+        for keyword in AGROTOXICOS_ESPECIFICOS:
             if keyword.lower() in lower:
                 found.add(keyword)
         return sorted(found)
