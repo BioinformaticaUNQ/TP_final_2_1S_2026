@@ -58,3 +58,9 @@ public
 
 # Output files
 output/*
+
+# BLAST local (binarios y bases de datos grandes)
+data/blast/
+data/db/
+data/fasta/*.fasta
+data/fasta/*.fasta.gz
