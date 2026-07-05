@@ -43,7 +43,6 @@ class UniProtService:
         )
 
         if response.status_code != 200:
-            print(f"Error al obtener datos de UniProt para {nombre_proteina}: {response.status_code}")
             return None
 
         data = response.json()

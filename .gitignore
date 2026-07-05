@@ -54,3 +54,6 @@ Thumbs.db
 
 # Temporary files
 public
+
+# Output files
+output/*
