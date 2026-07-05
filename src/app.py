@@ -8,9 +8,10 @@ import click
 
 from models import Agrotoxico, Articulo, ResultadoArticulo
 from pdf_parser import parse_pdf
+from services.blast_service import buscar_homologos_humanos
 from services.crossref_service import fetch_doi
 from services.pubchem_service import fetch_compound
-from services.uniprot_service import fetch_protein
+from services.uniprot_service import fetch_protein, fetch_sequence
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/[^\s]+$")
 
@@ -36,6 +37,7 @@ INPUT = InputType()
 CANDIDATO_RE = re.compile(r"^[A-Za-z][A-Za-z0-9\s\-]{1,50}$")
 MAX_CANDIDATOS_PROTEINA = 10
 MAX_CANDIDATOS_AGROTOXICO = 10
+MAX_HOMOLOGOS_TOTALES = 15
 
 
 def es_candidato_valido(nombre: str) -> bool:
@@ -47,7 +49,7 @@ def es_candidato_valido(nombre: str) -> bool:
     return 1 <= len(palabras) <= 6
 
 
-def build_resultado_desde_pdf(path: Path) -> ResultadoArticulo:
+def build_resultado_desde_pdf(path: Path, ejecutar_blast: bool = True) -> ResultadoArticulo:
     extraido = parse_pdf(path)
 
     articulo = None
@@ -93,6 +95,45 @@ def build_resultado_desde_pdf(path: Path) -> ResultadoArticulo:
         nombres_vistos.add(agrotoxico.nombre_comun)
         resultado.agrotoxicos.append(agrotoxico)
 
+    if extraido.afinidades and resultado.agrotoxicos:
+        primera_afinidad = extraido.afinidades[0]
+        objetivo = resultado.agrotoxicos[0]
+        objetivo.tipo_afinidad = primera_afinidad.get("tipo")
+        objetivo.valor_afinidad = primera_afinidad.get("valor")
+        objetivo.unidad_afinidad = primera_afinidad.get("unidad")
+        if extraido.metodos_experimentales:
+            objetivo.metodo_experimental = ", ".join(extraido.metodos_experimentales)
+        if objetivo.fuente_dato:
+            objetivo.fuente_dato = f"{objetivo.fuente_dato}; Texto del articulo"
+        else:
+            objetivo.fuente_dato = "Texto del articulo"
+
+    if extraido.codigos_pdb and resultado.proteinas:
+        resultado.proteinas[0].pdb_code = extraido.codigos_pdb[0]
+
+    if ejecutar_blast:
+        for proteina in resultado.proteinas:
+            if not proteina.uniprot_id:
+                continue
+            if proteina.organismo and "homo sapiens" in proteina.organismo.lower():
+                continue
+            try:
+                secuencia = fetch_sequence(proteina.uniprot_id)
+            except Exception as exc:
+                click.echo(f"Aviso: no se pudo obtener la secuencia de {proteina.uniprot_id}: {exc}")
+                continue
+            if not secuencia:
+                continue
+            try:
+                homologos = buscar_homologos_humanos(secuencia, max_hits=MAX_HOMOLOGOS_TOTALES)
+            except Exception as exc:
+                click.echo(f"Aviso: fallo BLASTp para {proteina.uniprot_id}: {exc}")
+                continue
+            resultado.homologos.extend(homologos)
+
+        resultado.homologos.sort(key=lambda h: h.evalue if h.evalue is not None else float("inf"))
+        resultado.homologos = resultado.homologos[:MAX_HOMOLOGOS_TOTALES]
+
     return resultado
 
 
@@ -104,8 +145,8 @@ def guardar_resultado(resultado: ResultadoArticulo, nombre_base: str, output_dir
     return output_path
 
 
-def procesar_pdf(path: Path, output_dir: Path) -> Path:
-    resultado = build_resultado_desde_pdf(path)
+def procesar_pdf(path: Path, output_dir: Path, ejecutar_blast: bool = True) -> Path:
+    resultado = build_resultado_desde_pdf(path, ejecutar_blast=ejecutar_blast)
     return guardar_resultado(resultado, path.stem, output_dir)
 
 
@@ -117,7 +158,14 @@ def procesar_pdf(path: Path, output_dir: Path) -> Path:
     type=click.Path(path_type=Path),
     help="Directorio donde se guardan los JSON generados.",
 )
-def main(source, output_dir):
+@click.option(
+    "--skip-blast",
+    is_flag=True,
+    default=False,
+    help="Omite la busqueda de homologos humanos via BLASTp (mas rapido para pruebas).",
+)
+def main(source, output_dir, skip_blast):
+    ejecutar_blast = not skip_blast
     match source["kind"]:
         case "doi":
             articulo = fetch_doi(source["doi"])
@@ -129,7 +177,7 @@ def main(source, output_dir):
             output_path = guardar_resultado(resultado, nombre_base, output_dir)
             click.echo(f"JSON generado: {output_path}")
         case "pdf":
-            output_path = procesar_pdf(source["path"], output_dir)
+            output_path = procesar_pdf(source["path"], output_dir, ejecutar_blast=ejecutar_blast)
             click.echo(f"JSON generado: {output_path}")
         case "dir":
             pdfs = sorted(source["path"].glob("*.pdf"))
@@ -137,7 +185,7 @@ def main(source, output_dir):
                 click.echo(f"No se encontraron PDFs en {source['path']}")
                 return
             for pdf_path in pdfs:
-                output_path = procesar_pdf(pdf_path, output_dir)
+                output_path = procesar_pdf(pdf_path, output_dir, ejecutar_blast=ejecutar_blast)
                 click.echo(f"JSON generado: {output_path}")
         case "file":
             click.echo(f"Archivo detectado: {source['path']}")

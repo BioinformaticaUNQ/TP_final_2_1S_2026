@@ -40,6 +40,10 @@ class ResultadoArticulo:
                     "familia_quimica": a.familia_quimica,
                     "smiles": a.smiles,
                     "logP": a.logP,
+                    "tipo_afinidad": a.tipo_afinidad,
+                    "valor_afinidad": a.valor_afinidad,
+                    "unidad_afinidad": a.unidad_afinidad,
+                    "metodo_experimental": a.metodo_experimental,
                     "fuente_dato": a.fuente_dato,
                 }
                 for a in self.agrotoxicos

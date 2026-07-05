@@ -75,8 +75,24 @@ class UniProtService:
         )
 
 
+    def fetch_sequence(self, uniprot_id: str) -> str | None:
+        url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.fasta"
+        response = requests.get(url, timeout=30)
+
+        if response.status_code != 200:
+            return None
+
+        lineas = response.text.splitlines()
+        secuencia = "".join(linea.strip() for linea in lineas if not linea.startswith(">"))
+        return secuencia or None
+
+
 def fetch_protein(
     nombre_proteina: str,
     organismo: str | None = None,
 ) -> ProteinaOrganismoModelo | None:
     return UniProtService().fetch_protein(nombre_proteina, organismo)
+
+
+def fetch_sequence(uniprot_id: str) -> str | None:
+    return UniProtService().fetch_sequence(uniprot_id)
