@@ -7,7 +7,7 @@ from pathlib import Path
 import click
 
 from models import Agrotoxico, Articulo, ResultadoArticulo
-from pdf_parser import parse_pdf
+from utils.pdf_parser import parse_pdf
 from services.blast_service import buscar_homologos_humanos
 from services.crossref_service import fetch_doi
 from services.pubchem_service import fetch_compound
