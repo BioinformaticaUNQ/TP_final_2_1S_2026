@@ -21,8 +21,26 @@ def test_blast_service_acepta_modo_local():
     assert service.mode == "local"
 
 
-def test_extraer_uniprot_id_sin_version():
-    assert BlastService._extraer_uniprot_id("P14780.3", "sp|P14780.3|MMP9_HUMAN") == "P14780"
+def test_normalizar_uniprot_id_sin_version():
+    assert BlastService.normalizar_uniprot_id("P14780.3", "sp|P14780.3|MMP9_HUMAN") == "P14780"
+
+
+def test_normalizar_nombre_formato_ncbi():
+    hit_def = (
+        "RecName: Full=Apolipoprotein D; Short=Apo-D; Short=ApoD; "
+        "Flags: Precursor [Homo sapiens]"
+    )
+    assert BlastService.normalizar_nombre(hit_def) == "Apolipoprotein D"
+
+
+def test_normalizar_nombre_formato_uniprot_local():
+    hit_def = "Apolipoprotein D OS=Homo sapiens OX=9606 GN=APOD PE=1 SV=1"
+    assert BlastService.normalizar_nombre(hit_def) == "Apolipoprotein D"
+
+
+def test_normalizar_evalue():
+    assert BlastService.normalizar_evalue(4.20599e-61) == 4.20599e-61
+    assert BlastService.normalizar_evalue(0.0) == 0.0
 
 
 @pytest.mark.skipif(
@@ -45,4 +63,5 @@ def test_blast_local_apod():
 
     assert hits
     assert hits[0].uniprot_id == "P05090"
+    assert hits[0].nombre == "Apolipoprotein D"
     assert hits[0].pct_identidad == pytest.approx(50.88, rel=0.01)
