@@ -49,7 +49,11 @@ def es_candidato_valido(nombre: str) -> bool:
     return 1 <= len(palabras) <= 6
 
 
-def build_resultado_desde_pdf(path: Path, ejecutar_blast: bool = True) -> ResultadoArticulo:
+def build_resultado_desde_pdf(
+    path: Path,
+    ejecutar_blast: bool = True,
+    blast_mode: str = "remote",
+) -> ResultadoArticulo:
     extraido = parse_pdf(path)
 
     articulo = None
@@ -125,7 +129,11 @@ def build_resultado_desde_pdf(path: Path, ejecutar_blast: bool = True) -> Result
             if not secuencia:
                 continue
             try:
-                homologos = buscar_homologos_humanos(secuencia, max_hits=MAX_HOMOLOGOS_TOTALES)
+                homologos = buscar_homologos_humanos(
+                    secuencia,
+                    max_hits=MAX_HOMOLOGOS_TOTALES,
+                    mode=blast_mode,
+                )
             except Exception as exc:
                 click.echo(f"Aviso: fallo BLASTp para {proteina.uniprot_id}: {exc}")
                 continue
@@ -145,8 +153,17 @@ def guardar_resultado(resultado: ResultadoArticulo, nombre_base: str, output_dir
     return output_path
 
 
-def procesar_pdf(path: Path, output_dir: Path, ejecutar_blast: bool = True) -> Path:
-    resultado = build_resultado_desde_pdf(path, ejecutar_blast=ejecutar_blast)
+def procesar_pdf(
+    path: Path,
+    output_dir: Path,
+    ejecutar_blast: bool = True,
+    blast_mode: str = "remote",
+) -> Path:
+    resultado = build_resultado_desde_pdf(
+        path,
+        ejecutar_blast=ejecutar_blast,
+        blast_mode=blast_mode,
+    )
     return guardar_resultado(resultado, path.stem, output_dir)
 
 
@@ -164,7 +181,14 @@ def procesar_pdf(path: Path, output_dir: Path, ejecutar_blast: bool = True) -> P
     default=False,
     help="Omite la busqueda de homologos humanos via BLASTp (mas rapido para pruebas).",
 )
-def main(source, output_dir, skip_blast):
+@click.option(
+    "--blast-mode",
+    type=click.Choice(["local", "remote"], case_sensitive=False),
+    default="remote",
+    show_default=True,
+    help="BLASTp local (rapido, para debug) o remote (NCBI/ICBN, comportamiento por defecto).",
+)
+def main(source, output_dir, skip_blast, blast_mode):
     ejecutar_blast = not skip_blast
     match source["kind"]:
         case "doi":
@@ -177,7 +201,12 @@ def main(source, output_dir, skip_blast):
             output_path = guardar_resultado(resultado, nombre_base, output_dir)
             click.echo(f"JSON generado: {output_path}")
         case "pdf":
-            output_path = procesar_pdf(source["path"], output_dir, ejecutar_blast=ejecutar_blast)
+            output_path = procesar_pdf(
+                source["path"],
+                output_dir,
+                ejecutar_blast=ejecutar_blast,
+                blast_mode=blast_mode,
+            )
             click.echo(f"JSON generado: {output_path}")
         case "dir":
             pdfs = sorted(source["path"].glob("*.pdf"))
@@ -185,7 +214,12 @@ def main(source, output_dir, skip_blast):
                 click.echo(f"No se encontraron PDFs en {source['path']}")
                 return
             for pdf_path in pdfs:
-                output_path = procesar_pdf(pdf_path, output_dir, ejecutar_blast=ejecutar_blast)
+                output_path = procesar_pdf(
+                    pdf_path,
+                    output_dir,
+                    ejecutar_blast=ejecutar_blast,
+                    blast_mode=blast_mode,
+                )
                 click.echo(f"JSON generado: {output_path}")
         case "file":
             click.echo(f"Archivo detectado: {source['path']}")
