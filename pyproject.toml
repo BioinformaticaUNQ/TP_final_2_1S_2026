@@ -25,11 +25,12 @@ tp-bioinfo = "app:main"
 [project.optional-dependencies]
 test = ["pytest"]
 
-[tool.setuptools]
-py-modules = ["app", "crossref_service", "pdf_parser", "pubchem_service", "uniprot_service"]
-
 [tool.setuptools.package-dir]
 "" = "src"
 
+[tool.setuptools]
+py-modules = ["app"]
+
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["models*", "services*", "utils*"]
