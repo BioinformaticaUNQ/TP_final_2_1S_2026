@@ -21,7 +21,7 @@ class PubChemService:
         encoded_name = quote(clean_name)
         url = (
             f"{self.BASE_URL}/compound/name/{encoded_name}"
-            "/property/CanonicalSMILES,XLogP/JSON"
+            "/property/CanonicalSMILES,ConnectivitySMILES,IsomericSMILES,XLogP/JSON"
         )
         
         logger.info(f"Consultando PubChem para el compuesto: '{clean_name}'")
@@ -49,7 +49,12 @@ class PubChemService:
             return None
 
         first = properties[0]
-        smiles = first.get("CanonicalSMILES")
+        smiles = (
+            first.get("CanonicalSMILES")
+            or first.get("SMILES")
+            or first.get("ConnectivitySMILES")
+            or first.get("IsomericSMILES")
+        )
         logp = first.get("XLogP")
         
         logger.success(f"Datos obtenidos de PubChem para '{clean_name}': SMILES={smiles} | LogP={logp}")

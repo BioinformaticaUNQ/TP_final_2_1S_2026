@@ -87,13 +87,14 @@ def build_resultado_desde_pdf(
 
     nombres_vistos = set()
     for nombre in candidatos_agrotoxico:
+        familia_quimica = extraido.familias_agrotoxicos.get(nombre)
         try:
-            agrotoxico = fetch_compound(nombre)
+            agrotoxico = fetch_compound(nombre, familia_quimica=familia_quimica)
         except Exception as exc:
             click.echo(f"Aviso: fallo la consulta a PubChem para '{nombre}': {exc}")
             agrotoxico = None
         if agrotoxico is None:
-            agrotoxico = Agrotoxico(nombre_comun=nombre)
+            agrotoxico = Agrotoxico(nombre_comun=nombre, familia_quimica=familia_quimica)
         if agrotoxico.nombre_comun in nombres_vistos:
             continue
         nombres_vistos.add(agrotoxico.nombre_comun)

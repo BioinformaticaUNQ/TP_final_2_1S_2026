@@ -21,7 +21,7 @@ class ResultadoArticulo:
                 "doi": self.articulo.doi,
                 "titulo": self.articulo.titulo,
                 "autores": self.articulo.autores,
-                "año": self.articulo.anio,
+                "anio": self.articulo.anio,
                 "revista": self.articulo.revista,
             },
             "proteinas": [

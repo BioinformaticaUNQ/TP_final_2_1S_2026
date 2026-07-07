@@ -34,6 +34,7 @@ def test_build_resultado_desde_pdf_enriquece_y_deduplica(monkeypatch, tmp_path):
         organismos=["Danio rerio"],
         proteinas_candidatas=["Lipocalin-2", "Lipocalin 2", "bad/candidate"],
         agrotoxicos_candidatos=["atrazine"],
+        familias_agrotoxicos={"atrazine": "Triazina"},
         afinidades=[{"tipo": "Kd", "valor": "2.5", "unidad": "mM"}],
         metodos_experimentales=["ITC"],
         codigos_pdb=["1ABC"],
@@ -62,8 +63,9 @@ def test_build_resultado_desde_pdf_enriquece_y_deduplica(monkeypatch, tmp_path):
     monkeypatch.setattr(
         app,
         "fetch_compound",
-        lambda name: Agrotoxico(
+        lambda name, familia_quimica=None: Agrotoxico(
             nombre_comun=name,
+            familia_quimica=familia_quimica,
             smiles="CCN",
             logP=2.6,
             fuente_dato="PubChem PUG REST",
@@ -86,6 +88,7 @@ def test_build_resultado_desde_pdf_enriquece_y_deduplica(monkeypatch, tmp_path):
     assert resultado.proteinas[0].uniprot_id == "Q0P4C2"
     assert resultado.proteinas[0].pdb_code == "1ABC"
     assert len(resultado.agrotoxicos) == 1
+    assert resultado.agrotoxicos[0].familia_quimica == "Triazina"
     assert resultado.agrotoxicos[0].tipo_afinidad == "Kd"
     assert resultado.agrotoxicos[0].valor_afinidad == "2.5"
     assert resultado.agrotoxicos[0].unidad_afinidad == "mM"
@@ -108,7 +111,9 @@ def test_guardar_resultado_escribe_json(tmp_path):
     output_path = app.guardar_resultado(resultado, "paper", tmp_path)
 
     assert output_path == tmp_path / "paper.json"
-    assert '"doi": "10.1234/example"' in output_path.read_text(encoding="utf-8")
+    contents = output_path.read_text(encoding="utf-8")
+    assert '"doi": "10.1234/example"' in contents
+    assert '"anio": 2024' in contents
 
 
 def test_cli_pdf_invoca_procesar_pdf_con_flags(monkeypatch, tmp_path):

@@ -45,7 +45,7 @@ def pubchem_payload() -> dict:
             "Properties": [
                 {
                     "CID": 2256,
-                    "CanonicalSMILES": "CCNC1=NC(=NC(=N1)Cl)NC(C)C",
+                    "ConnectivitySMILES": "CCNC1=NC(=NC(=N1)Cl)NC(C)C",
                     "XLogP": 2.6,
                 }
             ]

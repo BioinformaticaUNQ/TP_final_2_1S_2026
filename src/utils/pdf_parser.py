@@ -45,6 +45,22 @@ AGROTOXICOS_ESPECIFICOS = [
     "flonicamid", "avermectin", "deltamethrin",
 ]
 
+AGROTOXICO_FAMILIAS = {
+    "alachlor": "Cloroacetanilida",
+    "atrazine": "Triazina",
+    "atrazina": "Triazina",
+    "avermectin": "Avermectina",
+    "chlorpyrifos": "Organofosforado",
+    "clorpirifos": "Organofosforado",
+    "deltamethrin": "Piretroide",
+    "flonicamid": "Piridinacarboxamida",
+    "glyphosate": "Organofosfonato",
+    "glifosato": "Organofosfonato",
+    "imidacloprid": "Neonicotinoide",
+    "malathion": "Organofosforado",
+    "permethrin": "Piretroide",
+}
+
 FAMILIAS_Y_GENERALES = [
     "neonicotinoid", "neonicotinoide", "triazine", "triazina",
     "herbicide", "herbicida", "pesticide", "pesticida", "insecticide", "insecticida",
@@ -72,6 +88,7 @@ class ExtractedArticleData:
     organismos: list[str] = field(default_factory=list)
     proteinas_candidatas: list[str] = field(default_factory=list)
     agrotoxicos_candidatos: list[str] = field(default_factory=list)
+    familias_agrotoxicos: dict[str, str] = field(default_factory=dict)
     afinidades: list[dict] = field(default_factory=list)
     metodos_experimentales: list[str] = field(default_factory=list)
     codigos_pdb: list[str] = field(default_factory=list)
@@ -79,7 +96,24 @@ class ExtractedArticleData:
 
 class PdfParser:
     PDB_RE = re.compile(r"\b(?:PDB\s*(?:ID|code|entry)?\s*[:\-]?\s*)([1-9][A-Za-z0-9]{3})\b", re.IGNORECASE)
-    TITLE_IGNORE = ("doi", "abstract", "resumen", "university", "copyright", "downloaded", "author", "issn", "journal")
+    TITLE_IGNORE = (
+        "doi",
+        "abstract",
+        "resumen",
+        "university",
+        "digitalcommons",
+        "department",
+        "publications",
+        "follow this",
+        "part of the",
+        "this article",
+        "published in",
+        "copyright",
+        "downloaded",
+        "author",
+        "issn",
+        "journal",
+    )
 
     def parse(self, path: str | Path) -> ExtractedArticleData:
         path = Path(path)
@@ -91,6 +125,7 @@ class PdfParser:
         data.organismos = self._extract_organisms(texto_completo)
         data.proteinas_candidatas = self._extract_proteins(texto_completo)
         data.agrotoxicos_candidatos = self._extract_agrotoxicos(texto_completo)
+        data.familias_agrotoxicos = self._extract_agrotoxic_families(data.agrotoxicos_candidatos)
         data.afinidades = self._extract_affinities(texto_completo)
         data.metodos_experimentales = self._extract_methods(texto_completo)
         data.codigos_pdb = self._extract_pdb_codes(texto_completo)
@@ -107,17 +142,58 @@ class PdfParser:
         return "\n".join(pages_text)
 
     def _extract_doi(self, texto: str) -> str | None:
-        match = DOI_RE.search(texto)
+        texto_normalizado = re.sub(r"(10\.\d{4,9}/[^\s]+)\s+(\.[^\s]+)", r"\1\2", texto)
+        match = DOI_RE.search(texto_normalizado)
         if match:
             return match.group(0).rstrip(".,;")
         return None
 
     def _extract_title(self, path: Path, texto: str) -> str | None:
-        lines = [line.strip() for line in texto.splitlines() if line.strip()]
-        for line in lines[:20]:
-            if len(line) > 20 and not line.lower().startswith(self.TITLE_IGNORE):
-                return line
+        lines = [self._normalize_extracted_line(line) for line in texto.splitlines()]
+        lines = [line for line in lines if line]
+        for idx, line in enumerate(lines[:30]):
+            lower = line.lower()
+            if len(line) <= 20 or lower.startswith(self.TITLE_IGNORE):
+                continue
+            if idx + 1 < len(lines):
+                next_line = lines[idx + 1]
+                next_lower = next_line.lower()
+                if (
+                    8 < len(next_line) <= 90
+                    and not next_lower.startswith(self.TITLE_IGNORE)
+                    and not DOI_RE.search(next_line)
+                ):
+                    return f"{line} {next_line}"
+            return line
         return path.stem
+
+    def _normalize_extracted_line(self, line: str) -> str:
+        line = " ".join(line.strip().split())
+        if not line:
+            return ""
+        return self._collapse_repeated_glyphs(line)
+
+    def _collapse_repeated_glyphs(self, text: str) -> str:
+        chars = [char for char in text if not char.isspace()]
+        if not chars:
+            return text
+
+        repeated_pairs = sum(
+            1
+            for idx in range(len(text) - 1)
+            if not text[idx].isspace() and text[idx] == text[idx + 1]
+        )
+        if repeated_pairs / len(chars) >= 0.35:
+            collapsed = []
+            idx = 0
+            while idx < len(text):
+                collapsed.append(text[idx])
+                if idx + 1 < len(text) and not text[idx].isspace() and text[idx] == text[idx + 1]:
+                    idx += 2
+                else:
+                    idx += 1
+            return "".join(collapsed)
+        return text
 
     def _extract_organisms(self, texto: str) -> list[str]:
         found = set()
@@ -159,6 +235,13 @@ class PdfParser:
             if keyword.lower() in lower:
                 found.add(keyword)
         return sorted(found)
+
+    def _extract_agrotoxic_families(self, agrotoxicos: list[str]) -> dict[str, str]:
+        return {
+            nombre: familia
+            for nombre in agrotoxicos
+            if (familia := AGROTOXICO_FAMILIAS.get(nombre.lower()))
+        }
 
     def _extract_affinities(self, texto: str) -> list[dict]:
         results = []
