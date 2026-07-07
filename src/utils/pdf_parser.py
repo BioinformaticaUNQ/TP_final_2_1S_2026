@@ -51,7 +51,7 @@ FAMILIAS_Y_GENERALES = [
 ]
 
 AFFINITY_RE = re.compile(
-    r"\b(K[dDiI]|IC50|EC50)\s*(?:=|of|:)?\s*([\d\.]+)\s*(n?[mM]|µ?[mM]|pM|mM)",
+    r"\b(K[dDiI]|IC50|EC50)\s*(?:=|of|:)?\s*([\d\.]+)\s*(nM|uM|µM|pM|mM|M)",
     re.IGNORECASE,
 )
 
