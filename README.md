@@ -1,105 +1,177 @@
-# Trabajo Práctico Final - Introducción a la Bioinformática
+# Trabajo Practico Final - Introduccion a la Bioinformatica
 
-## Guia de Uso
+Herramienta de linea de comandos para procesar bibliografia cientifica sobre interacciones entre proteinas tipo lipocalina/OBP/CSP y agrotoxicos. A partir de un PDF, un directorio de PDFs o un DOI, genera un JSON por articulo con metadatos, proteinas candidatas, compuestos investigados y homologos humanos cuando se ejecuta BLAST.
 
-Este proyecto se instala con `setuptools` usando `pip` dentro de un entorno virtual. Ese es el flujo principal de trabajo.
+## Requisitos
+
+- Python 3.13 o superior.
+- Windows PowerShell para los comandos de ejemplo.
+- Conexion a internet para Crossref, UniProt, PubChem, descarga de PDFs por DOI y BLAST remoto.
+
+El proyecto se empaqueta con `setuptools` desde `pyproject.toml`. Al instalarlo con `pip`, queda disponible el comando:
+
+```powershell
+tp-bioinfo
+```
+
+## Instalacion
 
 Crear y activar un entorno virtual:
 
-```bash
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.\.venv\Scripts\activate
 ```
 
-Instalar el paquete localmente:
+Instalar el paquete en modo editable:
 
-```bash
+```powershell
+python -m pip install --upgrade pip
 pip install -e .
 ```
 
-Instalar tambien las dependencias de prueba:
+Instalar tambien las dependencias de tests:
 
-```bash
+```powershell
 pip install -e ".[test]"
 ```
 
-Ejecutar la CLI instalada:
+Verificar que la CLI quedo instalada:
 
-```bash
-tp-bioinfo 10.1042/bj3180001
+```powershell
+tp-bioinfo --help
 ```
 
-Ejecutar el script de ejemplo:
+## Uso
 
-```bash
-python scripts/cli_example.py
+Procesar un PDF individual sin BLAST, util para pruebas rapidas:
+
+```powershell
+tp-bioinfo articles\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
 ```
 
-Ejecutar tests:
+Procesar todos los PDFs de un directorio:
 
-```bash
+```powershell
+tp-bioinfo articles --skip-blast --output-dir output\manual_dir
+```
+
+Procesar un DOI descargando el PDF cuando el publisher lo permite:
+
+```powershell
+tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --output-dir output\manual_doi --pdf-dir output\manual_doi\pdfs
+```
+
+Si el PDF no se puede descargar, la herramienta conserva un fallback y genera un JSON con metadatos de Crossref:
+
+```powershell
+tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\manual_doi_fallback
+```
+
+## Opciones principales
+
+```text
+--output-dir PATH            Directorio donde se guardan los JSON generados.
+--skip-blast                 Omite BLASTp para pruebas rapidas.
+--blast-mode [local|remote]  Usa BLAST local o remoto. Por defecto: remote.
+--pdf-dir PATH               Directorio para PDFs descargados desde DOI.
+```
+
+## BLAST
+
+Por defecto, si no se usa `--skip-blast`, la herramienta intenta BLAST remoto mediante NCBI. Ese modo puede tardar varios minutos por proteina y depende de la disponibilidad del servicio externo.
+
+Para demos y pruebas repetibles se recomienda configurar BLAST local:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
+```
+
+Luego ejecutar:
+
+```powershell
+tp-bioinfo articles\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
+```
+
+Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y PubChem sin esperar BLAST:
+
+```powershell
+tp-bioinfo articles --skip-blast --output-dir output\quick_test
+```
+
+## Salidas
+
+Cada articulo genera un JSON con esta estructura general:
+
+```text
+articulo
+proteinas
+agrotoxicos
+homologos_humanos
+```
+
+La carpeta `outputs/examples` contiene salidas de ejemplo versionadas, incluyendo:
+
+- PDF local con agrotoxicos.
+- PDF local con afinidad detectada.
+- DOI con descarga de PDF.
+- DOI con fallback Crossref.
+- Ejemplo con BLAST local y 15 homologos humanos.
+
+Tambien hay una lista de DOI utiles para pruebas en:
+
+```text
+articles/dois_casos_prueba.md
+```
+
+## Tests
+
+Ejecutar la suite:
+
+```powershell
 pytest -q
 ```
 
-Tambien se puede seguir usando Docker, pero queda como alternativa para reproducir la ejecucion en contenedor.
+Los tests unitarios usan mocks para evitar llamadas reales a servicios externos. Hay una prueba de BLAST local que se saltea automaticamente si no esta instalado el binario y la base local.
 
-Este proyecto también está preparado para ejecutar Python y sus dependencias dentro de Docker.
+## Build del paquete
 
-Construir la imagen:
+El proyecto puede construirse como wheel instalable:
 
-```bash
-docker build -t tp-bioinfo .
+```powershell
+python -m pip install build
+python -m build --wheel
 ```
 
-Ejecutar el contenedor:
+Instalar el wheel generado en una venv limpia:
 
-```bash
-docker run --rm tp-bioinfo
+```powershell
+python -m venv .venv_packaging_test
+.\.venv_packaging_test\Scripts\python.exe -m pip install dist\tp_bioinfo-0.1.0-py3-none-any.whl
+.\.venv_packaging_test\Scripts\tp-bioinfo.exe --help
 ```
-
-Ese comando levanta una verificación básica de que Python y las dependencias instaladas cargan bien dentro del contenedor.
-
-## Docker Compose
-
-Además del uso directo con `docker build` y `docker run`, el proyecto también se puede levantar con Docker Compose.
-
-Comparado con `setuptools` + `venv`, Docker Compose sirve para aislar la ejecución completa en un contenedor reproducible. `setuptools` deja el proyecto instalable como paquete Python real y es el camino recomendado para desarrollo local, pruebas y ejecución de la CLI en una venv.
-
-Construir y ejecutar con Compose:
-
-```bash
-docker compose up --build
-```
-
-Ejecutar solo el servicio y salir al terminar la verificación:
-
-```bash
-docker compose run --rm app
-```
-
-El servicio `app` está definido para construir la imagen local y ejecutar `app.py` dentro del contenedor.
 
 ## Estructura
 
-La estructura principal queda separada en tres partes:
-
 ```text
-app.py
 src/
-	services/
-	models/
+  app.py
+  models/
+  services/
+  utils/
+articles/
+outputs/examples/
 scripts/
 tests/
+docs/
 ```
 
-`src/services` agrupa los clientes externos, `src/models` agrupa los modelos de datos y `app.py` queda como punto de entrada de la CLI.
+- `src/app.py`: punto de entrada de la CLI.
+- `src/services`: clientes para Crossref, UniProt, PubChem y BLAST.
+- `src/models`: modelos de datos usados en la salida JSON.
+- `src/utils`: parser de PDFs.
+- `articles`: PDFs y DOI de prueba.
+- `outputs/examples`: JSON de ejemplo.
+- `scripts`: helpers de ejecucion y configuracion local.
+- `tests`: tests unitarios y de empaquetado.
 
-## Resumen de verificación
-
-1. Crear venv: `python -m venv .venv`
-2. Activar venv: `.venv\Scripts\activate`
-3. Instalar paquete: `pip install -e .`
-4. Instalar tests: `pip install -e ".[test]"`
-5. Probar CLI: `tp-bioinfo 10.1042/bj3180001`
-6. Probar script: `python scripts/cli_example.py`
-7. Correr tests: `pytest -q`
