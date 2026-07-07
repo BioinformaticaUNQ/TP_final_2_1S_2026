@@ -1,0 +1,68 @@
+{
+  "articulo": {
+    "doi": "10.3389/fphys.2020.00819",
+    "titulo": "Odorant-Binding Proteins Contribute to the Defense of the Red Flour Beetle, Tribolium castaneum, Against Essential Oil of Artemisia vulgaris",
+    "autores": [
+      "Yuan-chen Zhang",
+      "Shan-shan Gao",
+      "Shuang Xue",
+      "Kun-peng Zhang",
+      "Jing-shun Wang",
+      "Bin Li"
+    ],
+    "anio": 2020,
+    "revista": "Frontiers in Physiology"
+  },
+  "proteinas": [
+    {
+      "nombre": "chemosensory protein",
+      "organismo": "Apis mellifera",
+      "uniprot_id": "A0A8U0WQD7",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "odorant binding protein",
+      "organismo": "Apis mellifera",
+      "uniprot_id": "Q9U9J6",
+      "pdb_code": null,
+      "funcion_biologica": null
+    }
+  ],
+  "agrotoxicos": [
+    {
+      "nombre_comun": "deltamethrin",
+      "familia_quimica": "Piretroide",
+      "smiles": "CC1([C@H]([C@H]1C(=O)O[C@H](C#N)C2=CC(=CC=C2)OC3=CC=CC=C3)C=C(Br)Br)C",
+      "logP": 6.2,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "imidacloprid",
+      "familia_quimica": "Neonicotinoide",
+      "smiles": "C1CN(/C(=N/[N+](=O)[O-])/N1)CC2=CN=C(C=C2)Cl",
+      "logP": 1.2,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "permethrin",
+      "familia_quimica": "Piretroide",
+      "smiles": "CC1(C(C1C(=O)OCC2=CC(=CC=C2)OC3=CC=CC=C3)C=C(Cl)Cl)C",
+      "logP": 6.5,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    }
+  ],
+  "homologos_humanos": []
+}

@@ -1,0 +1,70 @@
+{
+  "articulo": {
+    "doi": "10.1016/j.ecoenv.2025.119210",
+    "titulo": "Overexpression of multiple odorant binding and chemosensory protein genes contributed to multi-insecticide resistance in Aphis gossypii Glover",
+    "autores": [
+      "Tiantian Wang",
+      "Haixiang Lv",
+      "Chengfeng Zheng",
+      "Chengzhi Yang",
+      "Yang Huang",
+      "Xuchao Li",
+      "Jianhong Li",
+      "Kangsheng Ma"
+    ],
+    "anio": 2025,
+    "revista": "Ecotoxicology and Environmental Safety"
+  },
+  "proteinas": [
+    {
+      "nombre": "chemosensory protein",
+      "organismo": "Apis mellifera",
+      "uniprot_id": "A0A8U0WQD7",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "odorant binding protein",
+      "organismo": "Apis mellifera",
+      "uniprot_id": "Q9U9J6",
+      "pdb_code": null,
+      "funcion_biologica": null
+    }
+  ],
+  "agrotoxicos": [
+    {
+      "nombre_comun": "chlorpyrifos",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOP(=S)(OCC)OC1=NC(=C(C=C1Cl)Cl)Cl",
+      "logP": 5.3,
+      "tipo_afinidad": "Ki",
+      "valor_afinidad": "48.33",
+      "unidad_afinidad": "μM",
+      "metodo_experimental": "ITC, SPR, docking, fluorescence, molecular docking",
+      "fuente_dato": "PubChem PUG REST; Texto del articulo"
+    },
+    {
+      "nombre_comun": "imidacloprid",
+      "familia_quimica": "Neonicotinoide",
+      "smiles": "C1CN(/C(=N/[N+](=O)[O-])/N1)CC2=CN=C(C=C2)Cl",
+      "logP": 1.2,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "malathion",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOC(=O)CC(C(=O)OCC)SP(=S)(OC)OC",
+      "logP": 2.4,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    }
+  ],
+  "homologos_humanos": []
+}

@@ -1,0 +1,154 @@
+{
+  "articulo": {
+    "doi": "10.4110/in.2011.11.6.342",
+    "titulo": "Modulation of Glial and Neuronal Migration by Lipocalin-2 in Zebrafish",
+    "autores": [
+      "Ho Kim",
+      "Shinrye Lee",
+      "Hae-Chul Park",
+      "Won-Ha Lee",
+      "Myung-Shik Lee",
+      "Kyoungho Suk"
+    ],
+    "anio": 2011,
+    "revista": "Immune Network"
+  },
+  "proteinas": [
+    {
+      "nombre": "Matrix metalloproteinase-9",
+      "organismo": "Danio rerio",
+      "uniprot_id": "A0AC58G6M1",
+      "pdb_code": null,
+      "funcion_biologica": "Matrix metalloproteinase that plays an essential role in local proteolysis of the extracellular matrix and in leukocyte migration. Could play a role in bone osteoclastic resorption. Cleaves KiSS1 at a Gly-|-Leu bond. Cleaves NINJ1 to generate the Secreted ninjurin-1 form. Cleaves type IV and type V collagen into large C-terminal three quarter fragments and shorter N-terminal one quarter fragments. Degrades fibronectin but not laminin or Pz-peptide"
+    },
+    {
+      "nombre": "Lipocalin 2",
+      "organismo": "Danio rerio",
+      "uniprot_id": "Q0P4C2",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "Apolipoprotein D",
+      "organismo": "Danio rerio",
+      "uniprot_id": "Q3B7Q5",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "lipocalin 21",
+      "organismo": "Danio rerio",
+      "uniprot_id": "A0A8M1PC83",
+      "pdb_code": null,
+      "funcion_biologica": null
+    }
+  ],
+  "agrotoxicos": [],
+  "homologos_humanos": [
+    {
+      "uniprot_id": "P14780",
+      "nombre": "Matrix metalloproteinase-9",
+      "pct_identidad": 58.58,
+      "pct_similitud": 74.63,
+      "evalue": 0.0
+    },
+    {
+      "uniprot_id": "P08253",
+      "nombre": "72 kDa type IV collagenase",
+      "pct_identidad": 47.14,
+      "pct_similitud": 62.72,
+      "evalue": 2.2473e-162
+    },
+    {
+      "uniprot_id": "P02753",
+      "nombre": "Retinol-binding protein 4",
+      "pct_identidad": 53.76,
+      "pct_similitud": 73.41,
+      "evalue": 1.68432e-70
+    },
+    {
+      "uniprot_id": "P05090",
+      "nombre": "Apolipoprotein D",
+      "pct_identidad": 50.88,
+      "pct_similitud": 67.84,
+      "evalue": 4.20599e-61
+    },
+    {
+      "uniprot_id": "P45452",
+      "nombre": "Collagenase 3",
+      "pct_identidad": 35.97,
+      "pct_similitud": 50.36,
+      "evalue": 4.36093e-43
+    },
+    {
+      "uniprot_id": "P22894",
+      "nombre": "Neutrophil collagenase",
+      "pct_identidad": 33.89,
+      "pct_similitud": 48.66,
+      "evalue": 5.23114e-42
+    },
+    {
+      "uniprot_id": "P09238",
+      "nombre": "Stromelysin-2",
+      "pct_identidad": 35.91,
+      "pct_similitud": 52.9,
+      "evalue": 9.56193e-42
+    },
+    {
+      "uniprot_id": "Q9H306",
+      "nombre": "Matrix metalloproteinase-27",
+      "pct_identidad": 34.33,
+      "pct_similitud": 51.0,
+      "evalue": 1.05721e-39
+    },
+    {
+      "uniprot_id": "P24347",
+      "nombre": "Stromelysin-3",
+      "pct_identidad": 33.98,
+      "pct_similitud": 47.57,
+      "evalue": 8.24751e-38
+    },
+    {
+      "uniprot_id": "P02751",
+      "nombre": "Fibronectin",
+      "pct_identidad": 53.97,
+      "pct_similitud": 67.46,
+      "evalue": 3.35709e-37
+    },
+    {
+      "uniprot_id": "O60882",
+      "nombre": "Matrix metalloproteinase-20",
+      "pct_identidad": 33.1,
+      "pct_similitud": 49.65,
+      "evalue": 1.51641e-34
+    },
+    {
+      "uniprot_id": "P03956",
+      "nombre": "Interstitial collagenase",
+      "pct_identidad": 31.38,
+      "pct_similitud": 45.17,
+      "evalue": 1.16264e-33
+    },
+    {
+      "uniprot_id": "P08254",
+      "nombre": "Stromelysin-1",
+      "pct_identidad": 32.64,
+      "pct_similitud": 51.39,
+      "evalue": 1.49084e-33
+    },
+    {
+      "uniprot_id": "P51512",
+      "nombre": "Matrix metalloproteinase-16",
+      "pct_identidad": 30.0,
+      "pct_similitud": 46.56,
+      "evalue": 6.03088e-33
+    },
+    {
+      "uniprot_id": "P50281",
+      "nombre": "Matrix metalloproteinase-14",
+      "pct_identidad": 31.94,
+      "pct_similitud": 49.35,
+      "evalue": 2.50787e-32
+    }
+  ]
+}

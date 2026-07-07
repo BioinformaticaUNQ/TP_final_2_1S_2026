@@ -1,0 +1,61 @@
+{
+  "articulo": {
+    "doi": "10.1016/j.pestbp.2022.105271",
+    "titulo": "Acute toxicity of atrazine, alachlor, and chlorpyrifos mixtures to honey bees",
+    "autores": [
+      "Christopher J. Fellows",
+      "Troy D. Anderson",
+      "Daniel R. Swale"
+    ],
+    "anio": 2022,
+    "revista": "Pesticide Biochemistry and Physiology"
+  },
+  "proteinas": [],
+  "agrotoxicos": [
+    {
+      "nombre_comun": "alachlor",
+      "familia_quimica": "Cloroacetanilida",
+      "smiles": "CCC1=C(C(=CC=C1)CC)N(COC)C(=O)CCl",
+      "logP": 3.5,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "atrazine",
+      "familia_quimica": "Triazina",
+      "smiles": "CCNC1=NC(=NC(=N1)Cl)NC(C)C",
+      "logP": 2.6,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "chlorpyrifos",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOP(=S)(OCC)OC1=NC(=C(C=C1Cl)Cl)Cl",
+      "logP": 5.3,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "malathion",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOC(=O)CC(C(=O)OCC)SP(=S)(OC)OC",
+      "logP": 2.4,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    }
+  ],
+  "homologos_humanos": []
+}
