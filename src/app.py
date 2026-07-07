@@ -9,7 +9,7 @@ import click
 from models import Agrotoxico, Articulo, ResultadoArticulo
 from utils.pdf_parser import parse_pdf
 from services.blast_service import buscar_homologos_humanos
-from services.crossref_service import fetch_doi
+from services.crossref_service import download_pdf_from_doi, fetch_doi
 from services.pubchem_service import fetch_compound
 from services.uniprot_service import fetch_protein, fetch_sequence
 
@@ -189,16 +189,37 @@ def procesar_pdf(
     show_default=True,
     help="BLASTp local (rapido, para debug) o remote (NCBI/ICBN, comportamiento por defecto).",
 )
-def main(source, output_dir, skip_blast, blast_mode):
+@click.option(
+    "--pdf-dir",
+    default=None,
+    type=click.Path(path_type=Path),
+    help="Directorio para PDFs descargados desde DOI. Por defecto usa <output-dir>/pdfs.",
+)
+def main(source, output_dir, skip_blast, blast_mode, pdf_dir):
     ejecutar_blast = not skip_blast
     match source["kind"]:
         case "doi":
-            articulo = fetch_doi(source["doi"])
+            doi = source["doi"]
+            pdf_output_dir = pdf_dir or output_dir / "pdfs"
+            pdf_path = download_pdf_from_doi(doi, pdf_output_dir)
+            if pdf_path is not None:
+                output_path = procesar_pdf(
+                    pdf_path,
+                    output_dir,
+                    ejecutar_blast=ejecutar_blast,
+                    blast_mode=blast_mode,
+                )
+                click.echo(f"PDF descargado: {pdf_path}")
+                click.echo(f"JSON generado: {output_path}")
+                return
+
+            click.echo(f"No se pudo descargar PDF para el DOI {doi}. Se guardan solo metadatos.")
+            articulo = fetch_doi(doi)
             if articulo is None:
-                click.echo(f"No se pudo obtener informacion para el DOI {source['doi']}")
+                click.echo(f"No se pudo obtener informacion para el DOI {doi}")
                 return
             resultado = ResultadoArticulo(articulo=articulo)
-            nombre_base = source["doi"].replace("/", "_")
+            nombre_base = doi.replace("/", "_")
             output_path = guardar_resultado(resultado, nombre_base, output_dir)
             click.echo(f"JSON generado: {output_path}")
         case "pdf":

@@ -161,6 +161,7 @@ def test_cli_directorio_procesa_solo_pdfs_ordenados(monkeypatch, tmp_path):
 def test_cli_doi_guarda_metadatos_de_crossref(monkeypatch, tmp_path):
     saved = {}
 
+    monkeypatch.setattr(app, "download_pdf_from_doi", lambda doi, output_dir: None)
     monkeypatch.setattr(
         app,
         "fetch_doi",
@@ -184,4 +185,52 @@ def test_cli_doi_guarda_metadatos_de_crossref(monkeypatch, tmp_path):
     assert saved["resultado"].articulo.doi == "10.1234/example"
     assert saved["nombre_base"] == "10.1234_example"
     assert saved["output_dir"] == tmp_path
+    assert "JSON generado:" in result.output
+
+
+def test_cli_doi_descarga_pdf_y_continua_flujo(monkeypatch, tmp_path):
+    downloaded_pdf = tmp_path / "pdfs" / "10.1234_example.pdf"
+    processed = {}
+
+    def fake_download_pdf_from_doi(doi, output_dir):
+        downloaded_pdf.parent.mkdir(parents=True, exist_ok=True)
+        downloaded_pdf.write_bytes(b"%PDF-1.4")
+        processed["download"] = (doi, output_dir)
+        return downloaded_pdf
+
+    def fake_procesar_pdf(path, output_dir, ejecutar_blast=True, blast_mode="remote"):
+        processed["procesar"] = (path, output_dir, ejecutar_blast, blast_mode)
+        return output_dir / "10.1234_example.json"
+
+    monkeypatch.setattr(app, "download_pdf_from_doi", fake_download_pdf_from_doi)
+    monkeypatch.setattr(app, "procesar_pdf", fake_procesar_pdf)
+    monkeypatch.setattr(
+        app,
+        "fetch_doi",
+        lambda doi: (_ for _ in ()).throw(AssertionError("No debe usar fallback si hay PDF")),
+    )
+
+    result = CliRunner().invoke(
+        app.main,
+        [
+            "10.1234/example",
+            "--output-dir",
+            str(tmp_path / "out"),
+            "--pdf-dir",
+            str(tmp_path / "pdfs"),
+            "--skip-blast",
+            "--blast-mode",
+            "local",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert processed["download"] == ("10.1234/example", tmp_path / "pdfs")
+    assert processed["procesar"] == (
+        downloaded_pdf,
+        tmp_path / "out",
+        False,
+        "local",
+    )
+    assert "PDF descargado:" in result.output
     assert "JSON generado:" in result.output

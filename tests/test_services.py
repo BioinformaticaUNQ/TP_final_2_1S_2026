@@ -47,6 +47,132 @@ def test_crossref_service_devuelve_none_si_hay_error_de_red(monkeypatch):
     assert CrossrefService().fetch_doi("10.1234/example") is None
 
 
+def test_crossref_service_extrae_links_pdf_y_deriva_frontiers(monkeypatch):
+    payload = {
+        "message": {
+            "link": [
+                {
+                    "URL": "https://example.org/article/full",
+                    "content-type": "text/html",
+                },
+                {
+                    "URL": "https://example.org/article.pdf",
+                    "content-type": "application/pdf",
+                },
+                {
+                    "URL": "https://www.frontiersin.org/articles/10.3389/test/full",
+                    "content-type": "unspecified",
+                },
+            ]
+        }
+    }
+    monkeypatch.setattr(
+        requests,
+        "get",
+        lambda url, timeout: MockResponse(200, payload),
+    )
+
+    links = CrossrefService().fetch_pdf_links("10.1234/example")
+
+    assert links == [
+        "https://example.org/article.pdf",
+        "https://www.frontiersin.org/articles/10.3389/test/pdf",
+    ]
+
+
+def test_crossref_service_descarga_pdf_valido(monkeypatch, tmp_path):
+    class PdfResponse:
+        status_code = 200
+
+        def iter_content(self, chunk_size):
+            yield b"%PDF-1.4\n"
+            yield b"content"
+
+    crossref_payload = {
+        "message": {
+            "link": [
+                {
+                    "URL": "https://example.org/article.pdf",
+                    "content-type": "application/pdf",
+                }
+            ]
+        }
+    }
+
+    def fake_get(url, **kwargs):
+        if url.startswith("https://api.crossref.org"):
+            return MockResponse(200, crossref_payload)
+        assert kwargs["headers"]["Accept"].startswith("application/pdf")
+        assert kwargs["stream"] is True
+        return PdfResponse()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    path = CrossrefService().download_pdf_from_doi("10.1234/example", tmp_path)
+
+    assert path == tmp_path / "10.1234_example.pdf"
+    assert path.read_bytes() == b"%PDF-1.4\ncontent"
+
+
+def test_crossref_service_no_guarda_respuesta_no_pdf(monkeypatch, tmp_path):
+    class HtmlResponse:
+        status_code = 200
+
+        def iter_content(self, chunk_size):
+            yield b"<html>"
+
+    crossref_payload = {
+        "message": {
+            "link": [
+                {
+                    "URL": "https://example.org/article.pdf",
+                    "content-type": "application/pdf",
+                }
+            ]
+        }
+    }
+
+    def fake_get(url, **kwargs):
+        if url.startswith("https://api.crossref.org"):
+            return MockResponse(200, crossref_payload)
+        return HtmlResponse()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert CrossrefService().download_pdf_from_doi("10.1234/example", tmp_path) is None
+    assert not list(tmp_path.glob("*.pdf"))
+
+
+def test_crossref_service_no_crashea_si_stream_se_corta(monkeypatch, tmp_path):
+    class BrokenPdfResponse:
+        status_code = 200
+
+        def iter_content(self, chunk_size):
+            yield b"%PDF-1.4\n"
+            raise requests.exceptions.ChunkedEncodingError("connection reset")
+
+    crossref_payload = {
+        "message": {
+            "link": [
+                {
+                    "URL": "https://example.org/article.pdf",
+                    "content-type": "application/pdf",
+                }
+            ]
+        }
+    }
+
+    def fake_get(url, **kwargs):
+        if url.startswith("https://api.crossref.org"):
+            return MockResponse(200, crossref_payload)
+        return BrokenPdfResponse()
+
+    monkeypatch.setattr(requests, "get", fake_get)
+
+    assert CrossrefService().download_pdf_from_doi("10.1234/example", tmp_path) is None
+    assert not list(tmp_path.glob("*.tmp"))
+
+
 def test_pubchem_service_parsea_smiles_logp_y_fuente(monkeypatch, pubchem_payload):
     requested = {}
 
