@@ -124,6 +124,14 @@ Tambien hay una lista de DOI utiles para pruebas en:
 articles/dois_casos_prueba.md
 ```
 
+## Documentacion tecnica
+
+La arquitectura del proyecto esta documentada en:
+
+```text
+docs/architecture.md
+```
+
 ## Tests
 
 Ejecutar la suite:
@@ -174,4 +182,3 @@ docs/
 - `outputs/examples`: JSON de ejemplo.
 - `scripts`: helpers de ejecucion y configuracion local.
 - `tests`: tests unitarios y de empaquetado.
-
