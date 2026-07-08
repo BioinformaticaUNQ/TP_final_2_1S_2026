@@ -62,6 +62,25 @@ def test_pdf_parser_usa_nombre_de_archivo_si_no_encuentra_titulo(monkeypatch):
     assert data.titulo == "fallback_title"
 
 
+def test_pdf_parser_path_y_bytes_equivalentes(monkeypatch, article_text):
+    """Misma carga util de texto => mismos campos, sin importar Path o bytes."""
+    def fake_open(_source):
+        return FakePdf([FakePage(article_text)])
+
+    monkeypatch.setattr(pdf_parser.pdfplumber, "open", fake_open)
+    parser = PdfParser()
+
+    from_path = parser.parse(Path("paper.pdf"))
+    from_bytes = parser.parse(b"%PDF-1.4 fake")
+
+    assert from_path.doi == from_bytes.doi
+    assert from_path.titulo == from_bytes.titulo
+    assert from_path.organismos == from_bytes.organismos
+    assert from_path.proteinas_candidatas == from_bytes.proteinas_candidatas
+    assert from_path.agrotoxicos_candidatos == from_bytes.agrotoxicos_candidatos
+    assert from_path.afinidades == from_bytes.afinidades
+
+
 def test_extract_doi_limpia_puntuacion_final():
     parser = PdfParser()
 

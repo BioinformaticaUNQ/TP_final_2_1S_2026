@@ -80,7 +80,8 @@ def test_crossref_service_extrae_links_pdf_y_deriva_frontiers(monkeypatch):
     ]
 
 
-def test_crossref_service_descarga_pdf_valido(monkeypatch, tmp_path):
+def test_crossref_service_pdf_bytes_y_disco_coinciden(monkeypatch, tmp_path):
+    """fetch_pdf_bytes es la fuente canonica; disco debe ser la misma carga util."""
     class PdfResponse:
         status_code = 200
 
@@ -107,11 +108,16 @@ def test_crossref_service_descarga_pdf_valido(monkeypatch, tmp_path):
         return PdfResponse()
 
     monkeypatch.setattr(requests, "get", fake_get)
+    service = CrossrefService()
 
-    path = CrossrefService().download_pdf_from_doi("10.1234/example", tmp_path)
+    content = service.fetch_pdf_bytes("10.1234/example")
+    path = service.download_pdf_from_doi("10.1234/example", tmp_path)
 
+    assert content is not None
+    assert content.startswith(b"%PDF")
     assert path == tmp_path / "10.1234_example.pdf"
-    assert path.read_bytes() == b"%PDF-1.4\ncontent"
+    assert path.read_bytes() == content
+    assert content == b"%PDF-1.4\ncontent"
 
 
 def test_crossref_service_no_guarda_respuesta_no_pdf(monkeypatch, tmp_path):

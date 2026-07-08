@@ -1,2 +1,2 @@
-from .pdf_parser import ExtractedArticleData, PdfParser, parse_pdf
+from .pdf_parser import ExtractedArticleData, PdfInput, PdfParser, parse_pdf
 

@@ -2,9 +2,22 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from io import BytesIO
 from pathlib import Path
+from typing import BinaryIO
 
 import pdfplumber
+
+PdfInput = str | Path | bytes | bytearray | BinaryIO
+
+
+def as_pdfplumber_source(source: PdfInput):
+    """Normaliza path o bytes a un objeto aceptado por pdfplumber.open."""
+    if isinstance(source, (bytes, bytearray)):
+        return BytesIO(source)
+    if isinstance(source, (str, Path)):
+        return Path(source)
+    return source
 
 DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:a-zA-Z0-9]+")
 
@@ -115,13 +128,13 @@ class PdfParser:
         "journal",
     )
 
-    def parse(self, path: str | Path) -> ExtractedArticleData:
-        path = Path(path)
-        texto_completo = self._extract_text(path)
+    def parse(self, source: PdfInput) -> ExtractedArticleData:
+        path_for_title = Path(source) if isinstance(source, (str, Path)) else None
+        texto_completo = self._extract_text(source)
 
         data = ExtractedArticleData(texto_completo=texto_completo)
         data.doi = self._extract_doi(texto_completo)
-        data.titulo = self._extract_title(path, texto_completo)
+        data.titulo = self._extract_title(path_for_title, texto_completo)
         data.organismos = self._extract_organisms(texto_completo)
         data.proteinas_candidatas = self._extract_proteins(texto_completo)
         data.agrotoxicos_candidatos = self._extract_agrotoxicos(texto_completo)
@@ -132,9 +145,9 @@ class PdfParser:
 
         return data
 
-    def _extract_text(self, path: Path) -> str:
+    def _extract_text(self, source: PdfInput) -> str:
         pages_text = []
-        with pdfplumber.open(path) as pdf:
+        with pdfplumber.open(as_pdfplumber_source(source)) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
@@ -148,7 +161,7 @@ class PdfParser:
             return match.group(0).rstrip(".,;")
         return None
 
-    def _extract_title(self, path: Path, texto: str) -> str | None:
+    def _extract_title(self, path: Path | None, texto: str) -> str | None:
         lines = [self._normalize_extracted_line(line) for line in texto.splitlines()]
         lines = [line for line in lines if line]
         for idx, line in enumerate(lines[:30]):
@@ -165,7 +178,7 @@ class PdfParser:
                 ):
                     return f"{line} {next_line}"
             return line
-        return path.stem
+        return path.stem if path is not None else None
 
     def _normalize_extracted_line(self, line: str) -> str:
         line = " ".join(line.strip().split())
@@ -270,5 +283,5 @@ class PdfParser:
         return sorted(found)
 
 
-def parse_pdf(path: str | Path) -> ExtractedArticleData:
-    return PdfParser().parse(path)
+def parse_pdf(source: PdfInput) -> ExtractedArticleData:
+    return PdfParser().parse(source)

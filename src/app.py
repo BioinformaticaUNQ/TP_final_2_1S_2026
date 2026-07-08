@@ -7,13 +7,14 @@ from pathlib import Path
 import click
 
 from models import Agrotoxico, Articulo, ResultadoArticulo
-from utils.pdf_parser import parse_pdf
+from utils.pdf_parser import PdfInput, parse_pdf
 from services.blast_service import buscar_homologos_humanos
-from services.crossref_service import download_pdf_from_doi, fetch_doi
+from services.crossref_service import fetch_doi, fetch_pdf_bytes
 from services.pubchem_service import fetch_compound
 from services.uniprot_service import fetch_protein, fetch_sequence
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/[^\s]+$")
+DOI_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
 class InputType(click.ParamType):
@@ -49,12 +50,20 @@ def es_candidato_valido(nombre: str) -> bool:
     return 1 <= len(palabras) <= 6
 
 
+def nombre_base_desde_source(source: PdfInput, nombre_base: str | None = None) -> str:
+    if nombre_base:
+        return nombre_base
+    if isinstance(source, (str, Path)):
+        return Path(source).stem
+    return "article"
+
+
 def build_resultado_desde_pdf(
-    path: Path,
+    source: PdfInput,
     ejecutar_blast: bool = True,
     blast_mode: str = "remote",
 ) -> ResultadoArticulo:
-    extraido = parse_pdf(path)
+    extraido = parse_pdf(source)
 
     articulo = None
     if extraido.doi:
@@ -155,17 +164,22 @@ def guardar_resultado(resultado: ResultadoArticulo, nombre_base: str, output_dir
 
 
 def procesar_pdf(
-    path: Path,
+    source: PdfInput,
     output_dir: Path,
     ejecutar_blast: bool = True,
     blast_mode: str = "remote",
+    nombre_base: str | None = None,
 ) -> Path:
     resultado = build_resultado_desde_pdf(
-        path,
+        source,
         ejecutar_blast=ejecutar_blast,
         blast_mode=blast_mode,
     )
-    return guardar_resultado(resultado, path.stem, output_dir)
+    return guardar_resultado(
+        resultado,
+        nombre_base_desde_source(source, nombre_base),
+        output_dir,
+    )
 
 
 @click.command()
@@ -195,21 +209,49 @@ def procesar_pdf(
     type=click.Path(path_type=Path),
     help="Directorio para PDFs descargados desde DOI. Por defecto usa <output-dir>/pdfs.",
 )
-def main(source, output_dir, skip_blast, blast_mode, pdf_dir):
+@click.option(
+    "--no-save-pdf",
+    is_flag=True,
+    default=False,
+    help="Con DOI: analiza el PDF en memoria sin guardarlo en disco.",
+)
+def main(source, output_dir, skip_blast, blast_mode, pdf_dir, no_save_pdf):
     ejecutar_blast = not skip_blast
     match source["kind"]:
         case "doi":
             doi = source["doi"]
             pdf_output_dir = pdf_dir or output_dir / "pdfs"
-            pdf_path = download_pdf_from_doi(doi, pdf_output_dir)
-            if pdf_path is not None:
+            nombre_base = DOI_SAFE_RE.sub("_", doi).strip("_")
+            click.echo(
+                f"Procesando DOI {doi}. La descarga del PDF puede tardar "
+                f"(publishers lentos / sin barra de progreso en red)."
+            )
+            try:
+                pdf_bytes = fetch_pdf_bytes(doi)
+            except KeyboardInterrupt:
+                click.echo(
+                    "\nOperacion cancelada (Ctrl+C) durante la descarga del PDF. "
+                    "Si la red es lenta, reintenta y espera 30-60s sin cancelar.",
+                    err=True,
+                )
+                raise SystemExit(130) from None
+            if pdf_bytes is not None:
+                if not no_save_pdf:
+                    pdf_output_dir.mkdir(parents=True, exist_ok=True)
+                    pdf_path = pdf_output_dir / f"{nombre_base}.pdf"
+                    pdf_path.write_bytes(pdf_bytes)
+                    click.echo(f"PDF descargado: {pdf_path}. Parseando y enriqueciendo...")
+                else:
+                    click.echo(
+                        "PDF en memoria (no se guarda en disco). Parseando y enriqueciendo..."
+                    )
                 output_path = procesar_pdf(
-                    pdf_path,
+                    pdf_bytes,
                     output_dir,
                     ejecutar_blast=ejecutar_blast,
                     blast_mode=blast_mode,
+                    nombre_base=nombre_base,
                 )
-                click.echo(f"PDF descargado: {pdf_path}")
                 click.echo(f"JSON generado: {output_path}")
                 return
 
@@ -219,7 +261,6 @@ def main(source, output_dir, skip_blast, blast_mode, pdf_dir):
                 click.echo(f"No se pudo obtener informacion para el DOI {doi}")
                 return
             resultado = ResultadoArticulo(articulo=articulo)
-            nombre_base = doi.replace("/", "_")
             output_path = guardar_resultado(resultado, nombre_base, output_dir)
             click.echo(f"JSON generado: {output_path}")
         case "pdf":

@@ -161,7 +161,7 @@ def test_cli_directorio_procesa_solo_pdfs_ordenados(monkeypatch, tmp_path):
 def test_cli_doi_guarda_metadatos_de_crossref(monkeypatch, tmp_path):
     saved = {}
 
-    monkeypatch.setattr(app, "download_pdf_from_doi", lambda doi, output_dir: None)
+    monkeypatch.setattr(app, "fetch_pdf_bytes", lambda doi: None)
     monkeypatch.setattr(
         app,
         "fetch_doi",
@@ -189,20 +189,23 @@ def test_cli_doi_guarda_metadatos_de_crossref(monkeypatch, tmp_path):
 
 
 def test_cli_doi_descarga_pdf_y_continua_flujo(monkeypatch, tmp_path):
-    downloaded_pdf = tmp_path / "pdfs" / "10.1234_example.pdf"
+    """DOI: analiza desde bytes; por defecto tambien persiste el PDF."""
+    pdf_bytes = b"%PDF-1.4 content"
     processed = {}
+    pdf_dir = tmp_path / "pdfs"
+    output_dir = tmp_path / "out"
 
-    def fake_download_pdf_from_doi(doi, output_dir):
-        downloaded_pdf.parent.mkdir(parents=True, exist_ok=True)
-        downloaded_pdf.write_bytes(b"%PDF-1.4")
-        processed["download"] = (doi, output_dir)
-        return downloaded_pdf
+    def fake_procesar_pdf(
+        source,
+        output_dir,
+        ejecutar_blast=True,
+        blast_mode="remote",
+        nombre_base=None,
+    ):
+        processed["procesar"] = (source, output_dir, ejecutar_blast, blast_mode, nombre_base)
+        return output_dir / f"{nombre_base}.json"
 
-    def fake_procesar_pdf(path, output_dir, ejecutar_blast=True, blast_mode="remote"):
-        processed["procesar"] = (path, output_dir, ejecutar_blast, blast_mode)
-        return output_dir / "10.1234_example.json"
-
-    monkeypatch.setattr(app, "download_pdf_from_doi", fake_download_pdf_from_doi)
+    monkeypatch.setattr(app, "fetch_pdf_bytes", lambda doi: pdf_bytes)
     monkeypatch.setattr(app, "procesar_pdf", fake_procesar_pdf)
     monkeypatch.setattr(
         app,
@@ -215,9 +218,9 @@ def test_cli_doi_descarga_pdf_y_continua_flujo(monkeypatch, tmp_path):
         [
             "10.1234/example",
             "--output-dir",
-            str(tmp_path / "out"),
+            str(output_dir),
             "--pdf-dir",
-            str(tmp_path / "pdfs"),
+            str(pdf_dir),
             "--skip-blast",
             "--blast-mode",
             "local",
@@ -225,12 +228,99 @@ def test_cli_doi_descarga_pdf_y_continua_flujo(monkeypatch, tmp_path):
     )
 
     assert result.exit_code == 0
-    assert processed["download"] == ("10.1234/example", tmp_path / "pdfs")
-    assert processed["procesar"] == (
-        downloaded_pdf,
-        tmp_path / "out",
-        False,
-        "local",
-    )
+    saved_pdf = pdf_dir / "10.1234_example.pdf"
+    assert saved_pdf.read_bytes() == pdf_bytes
+    assert processed["procesar"] == (pdf_bytes, output_dir, False, "local", "10.1234_example")
     assert "PDF descargado:" in result.output
     assert "JSON generado:" in result.output
+
+
+def test_cli_doi_no_save_pdf_no_escribe_disco(monkeypatch, tmp_path):
+    """--no-save-pdf: mismo analisis en memoria, sin archivo PDF."""
+    pdf_bytes = b"%PDF-1.4 content"
+    pdf_dir = tmp_path / "pdfs"
+    output_dir = tmp_path / "out"
+    processed = {}
+
+    def fake_procesar_pdf(
+        source,
+        output_dir,
+        ejecutar_blast=True,
+        blast_mode="remote",
+        nombre_base=None,
+    ):
+        processed["source"] = source
+        processed["nombre_base"] = nombre_base
+        return output_dir / f"{nombre_base}.json"
+
+    monkeypatch.setattr(app, "fetch_pdf_bytes", lambda doi: pdf_bytes)
+    monkeypatch.setattr(app, "procesar_pdf", fake_procesar_pdf)
+
+    result = CliRunner().invoke(
+        app.main,
+        [
+            "10.1234/example",
+            "--output-dir",
+            str(output_dir),
+            "--pdf-dir",
+            str(pdf_dir),
+            "--no-save-pdf",
+            "--skip-blast",
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert processed["source"] == pdf_bytes
+    assert processed["nombre_base"] == "10.1234_example"
+    assert not pdf_dir.exists() or not list(pdf_dir.glob("*.pdf"))
+    assert "no se guarda en disco" in result.output.lower() or "memoria" in result.output.lower()
+    assert "JSON generado:" in result.output
+
+
+def test_build_resultado_es_agnostico_al_origen(monkeypatch, tmp_path):
+    """Path y bytes usan el mismo pipeline de enriquecimiento."""
+    extraido = ExtractedArticleData(
+        doi="10.1234/example",
+        titulo="T",
+        organismos=["Danio rerio"],
+        proteinas_candidatas=["Lipocalin-2"],
+        agrotoxicos_candidatos=["atrazine"],
+    )
+    seen_sources = []
+
+    def fake_parse(source):
+        seen_sources.append(source)
+        return extraido
+
+    monkeypatch.setattr(app, "parse_pdf", fake_parse)
+    monkeypatch.setattr(
+        app,
+        "fetch_doi",
+        lambda doi: Articulo(doi=doi, titulo="Crossref title"),
+    )
+    monkeypatch.setattr(
+        app,
+        "fetch_protein",
+        lambda name, organism: ProteinaOrganismoModelo(
+            nombre_proteina=name,
+            organismo=organism,
+            uniprot_id="Q0P4C2",
+        ),
+    )
+    monkeypatch.setattr(
+        app,
+        "fetch_compound",
+        lambda name, familia_quimica=None: Agrotoxico(nombre_comun=name),
+    )
+
+    pdf_path = tmp_path / "paper.pdf"
+    pdf_path.write_bytes(b"%PDF-fake")
+    pdf_bytes = b"%PDF-fake"
+
+    from_path = app.build_resultado_desde_pdf(pdf_path, ejecutar_blast=False)
+    from_bytes = app.build_resultado_desde_pdf(pdf_bytes, ejecutar_blast=False)
+
+    assert seen_sources == [pdf_path, pdf_bytes]
+    assert from_path.articulo.titulo == from_bytes.articulo.titulo == "Crossref title"
+    assert from_path.proteinas[0].uniprot_id == from_bytes.proteinas[0].uniprot_id
+    assert from_path.agrotoxicos[0].nombre_comun == from_bytes.agrotoxicos[0].nombre_comun
