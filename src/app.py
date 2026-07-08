@@ -9,12 +9,14 @@ import click
 from models import Agrotoxico, Articulo, ResultadoArticulo
 from utils.pdf_parser import PdfInput, parse_pdf
 from services.blast_service import buscar_homologos_humanos
+from services.candidatos_articulo import build_candidatos_articulo, hit_uniprot_aceptable
 from services.crossref_service import fetch_doi, fetch_pdf_bytes
 from services.pubchem_service import fetch_compound
 from services.uniprot_service import fetch_protein, fetch_sequence
 
 DOI_RE = re.compile(r"^10\.\d{4,9}/[^\s]+$")
 DOI_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
+MAX_HOMOLOGOS_TOTALES = 15
 
 
 class InputType(click.ParamType):
@@ -35,20 +37,6 @@ class InputType(click.ParamType):
 
 INPUT = InputType()
 
-CANDIDATO_RE = re.compile(r"^[A-Za-z][A-Za-z0-9\s\-]{1,50}$")
-MAX_CANDIDATOS_PROTEINA = 10
-MAX_CANDIDATOS_AGROTOXICO = 10
-MAX_HOMOLOGOS_TOTALES = 15
-
-
-def es_candidato_valido(nombre: str) -> bool:
-    if not nombre:
-        return False
-    if not CANDIDATO_RE.match(nombre):
-        return False
-    palabras = nombre.split()
-    return 1 <= len(palabras) <= 6
-
 
 def nombre_base_desde_source(source: PdfInput, nombre_base: str | None = None) -> str:
     if nombre_base:
@@ -58,12 +46,39 @@ def nombre_base_desde_source(source: PdfInput, nombre_base: str | None = None) -
     return "article"
 
 
+def _aplicar_afinidad_a_agrotoxicos(resultado: ResultadoArticulo, candidatos) -> None:
+    if not resultado.agrotoxicos:
+        return
+
+    por_nombre = {a.nombre_comun: a for a in resultado.agrotoxicos}
+    metodos = ", ".join(candidatos.metodos_experimentales) if candidatos.metodos_experimentales else None
+
+    for afinidad in candidatos.afinidades:
+        if not afinidad.agrotoxico:
+            continue
+        objetivo = por_nombre.get(afinidad.agrotoxico)
+        if objetivo is None:
+            continue
+        if objetivo.tipo_afinidad is not None:
+            continue
+        objetivo.tipo_afinidad = afinidad.tipo
+        objetivo.valor_afinidad = afinidad.valor
+        objetivo.unidad_afinidad = afinidad.unidad
+        if metodos:
+            objetivo.metodo_experimental = metodos
+        if objetivo.fuente_dato:
+            objetivo.fuente_dato = f"{objetivo.fuente_dato}; Texto del articulo"
+        else:
+            objetivo.fuente_dato = "Texto del articulo"
+
+
 def build_resultado_desde_pdf(
     source: PdfInput,
     ejecutar_blast: bool = True,
     blast_mode: str = "remote",
 ) -> ResultadoArticulo:
     extraido = parse_pdf(source)
+    candidatos = build_candidatos_articulo(extraido)
 
     articulo = None
     if extraido.doi:
@@ -72,14 +87,10 @@ def build_resultado_desde_pdf(
         articulo = Articulo(doi=extraido.doi or "", titulo=extraido.titulo)
 
     resultado = ResultadoArticulo(articulo=articulo)
-
-    organismo = extraido.organismos[0] if extraido.organismos else None
-
-    candidatos_proteina = [c for c in extraido.proteinas_candidatas if es_candidato_valido(c)]
-    candidatos_proteina = candidatos_proteina[:MAX_CANDIDATOS_PROTEINA]
+    organismo = candidatos.organismo_principal
 
     ids_vistos = set()
-    for candidata in candidatos_proteina:
+    for candidata in candidatos.proteinas:
         try:
             proteina = fetch_protein(candidata, organismo)
         except Exception as exc:
@@ -87,16 +98,20 @@ def build_resultado_desde_pdf(
             continue
         if proteina is None:
             continue
+        if not hit_uniprot_aceptable(candidata, proteina.nombre_proteina):
+            click.echo(
+                f"Aviso: se descarto hit UniProt '{proteina.nombre_proteina}' "
+                f"para candidato '{candidata}'."
+            )
+            continue
         if proteina.uniprot_id in ids_vistos:
             continue
         ids_vistos.add(proteina.uniprot_id)
         resultado.proteinas.append(proteina)
 
-    candidatos_agrotoxico = extraido.agrotoxicos_candidatos[:MAX_CANDIDATOS_AGROTOXICO]
-
     nombres_vistos = set()
-    for nombre in candidatos_agrotoxico:
-        familia_quimica = extraido.familias_agrotoxicos.get(nombre)
+    for nombre in candidatos.agrotoxicos:
+        familia_quimica = candidatos.familias_agrotoxicos.get(nombre)
         try:
             agrotoxico = fetch_compound(nombre, familia_quimica=familia_quimica)
         except Exception as exc:
@@ -109,21 +124,10 @@ def build_resultado_desde_pdf(
         nombres_vistos.add(agrotoxico.nombre_comun)
         resultado.agrotoxicos.append(agrotoxico)
 
-    if extraido.afinidades and resultado.agrotoxicos:
-        primera_afinidad = extraido.afinidades[0]
-        objetivo = resultado.agrotoxicos[0]
-        objetivo.tipo_afinidad = primera_afinidad.get("tipo")
-        objetivo.valor_afinidad = primera_afinidad.get("valor")
-        objetivo.unidad_afinidad = primera_afinidad.get("unidad")
-        if extraido.metodos_experimentales:
-            objetivo.metodo_experimental = ", ".join(extraido.metodos_experimentales)
-        if objetivo.fuente_dato:
-            objetivo.fuente_dato = f"{objetivo.fuente_dato}; Texto del articulo"
-        else:
-            objetivo.fuente_dato = "Texto del articulo"
+    _aplicar_afinidad_a_agrotoxicos(resultado, candidatos)
 
-    if extraido.codigos_pdb and resultado.proteinas:
-        resultado.proteinas[0].pdb_code = extraido.codigos_pdb[0]
+    if candidatos.codigos_pdb and resultado.proteinas:
+        resultado.proteinas[0].pdb_code = candidatos.codigos_pdb[0]
 
     if ejecutar_blast:
         for proteina in resultado.proteinas:

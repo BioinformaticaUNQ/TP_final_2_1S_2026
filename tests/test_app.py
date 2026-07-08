@@ -59,7 +59,12 @@ def test_build_resultado_desde_pdf_enriquece_y_deduplica(monkeypatch, tmp_path):
         "fetch_doi",
         lambda doi: Articulo(doi=doi, titulo="Crossref title", autores=["Ada"], anio=2024),
     )
-    monkeypatch.setattr(app, "fetch_protein", lambda name, organism: protein_by_name.get(name))
+
+    def fake_fetch_protein(name, organism):
+        assert organism == "Danio rerio"
+        return protein_by_name.get(name)
+
+    monkeypatch.setattr(app, "fetch_protein", fake_fetch_protein)
     monkeypatch.setattr(
         app,
         "fetch_compound",
@@ -302,7 +307,7 @@ def test_build_resultado_es_agnostico_al_origen(monkeypatch, tmp_path):
         app,
         "fetch_protein",
         lambda name, organism: ProteinaOrganismoModelo(
-            nombre_proteina=name,
+            nombre_proteina="Lipocalin 2",
             organismo=organism,
             uniprot_id="Q0P4C2",
         ),
@@ -324,3 +329,59 @@ def test_build_resultado_es_agnostico_al_origen(monkeypatch, tmp_path):
     assert from_path.articulo.titulo == from_bytes.articulo.titulo == "Crossref title"
     assert from_path.proteinas[0].uniprot_id == from_bytes.proteinas[0].uniprot_id
     assert from_path.agrotoxicos[0].nombre_comun == from_bytes.agrotoxicos[0].nombre_comun
+
+
+def test_build_resultado_descarta_hit_uniprot_absurdo(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "paper.pdf"
+    pdf_path.write_bytes(b"%PDF-fake")
+    extraido = ExtractedArticleData(
+        titulo="Lipocalin-2 in Danio rerio",
+        organismos=["Danio rerio"],
+        proteinas_candidatas=["LCN2", "Lipocalin-2"],
+        agrotoxicos_candidatos=[],
+    )
+
+    def fake_fetch_protein(name, organism):
+        if name == "LCN2":
+            return ProteinaOrganismoModelo(
+                nombre_proteina="Matrix metalloproteinase-9",
+                organismo=organism,
+                uniprot_id="A0AC58G6M1",
+            )
+        return ProteinaOrganismoModelo(
+            nombre_proteina="Lipocalin 2",
+            organismo=organism,
+            uniprot_id="Q0P4C2",
+        )
+
+    monkeypatch.setattr(app, "parse_pdf", lambda source: extraido)
+    monkeypatch.setattr(app, "fetch_doi", lambda doi: None)
+    monkeypatch.setattr(app, "fetch_protein", fake_fetch_protein)
+
+    resultado = app.build_resultado_desde_pdf(pdf_path, ejecutar_blast=False)
+
+    assert [p.uniprot_id for p in resultado.proteinas] == ["Q0P4C2"]
+
+
+def test_build_resultado_no_asigna_afinidad_si_hay_varios_agros(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "paper.pdf"
+    pdf_path.write_bytes(b"%PDF-fake")
+    extraido = ExtractedArticleData(
+        organismos=["Danio rerio"],
+        proteinas_candidatas=[],
+        agrotoxicos_candidatos=["chlorpyrifos", "imidacloprid"],
+        afinidades=[{"tipo": "Ki", "valor": "48.33", "unidad": "μM"}],
+        metodos_experimentales=["ITC"],
+    )
+
+    monkeypatch.setattr(app, "parse_pdf", lambda source: extraido)
+    monkeypatch.setattr(app, "fetch_doi", lambda doi: None)
+    monkeypatch.setattr(
+        app,
+        "fetch_compound",
+        lambda name, familia_quimica=None: Agrotoxico(nombre_comun=name),
+    )
+
+    resultado = app.build_resultado_desde_pdf(pdf_path, ejecutar_blast=False)
+
+    assert all(a.tipo_afinidad is None for a in resultado.agrotoxicos)

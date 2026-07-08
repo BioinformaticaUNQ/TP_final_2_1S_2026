@@ -23,7 +23,13 @@ DOI_RE = re.compile(r"10\.\d{4,9}/[-._;()/:a-zA-Z0-9]+")
 
 ORGANISM_PATTERNS = [
     re.compile(r"\b([A-Z][a-z]+ [a-z]{3,})\s*\(([A-Za-z ]+)\)"),
-    re.compile(r"\b(Danio rerio|Apis mellifera|Homo sapiens|Mus musculus|Rattus norvegicus|Xenopus laevis|Caenorhabditis elegans|Drosophila melanogaster)\b"),
+    re.compile(
+        r"\b("
+        r"Danio rerio|Apis mellifera|Homo sapiens|Mus musculus|Rattus norvegicus|"
+        r"Xenopus laevis|Caenorhabditis elegans|Drosophila melanogaster|"
+        r"Aphis gossypii|Tribolium castaneum|Rhopalosiphum padi|Bombyx mori"
+        r")\b"
+    ),
 ]
 
 COMMON_NAME_TO_SCIENTIFIC = {
@@ -39,6 +45,8 @@ COMMON_NAME_TO_SCIENTIFIC = {
     "ratón": "Mus musculus",
     "clawed frog": "Xenopus laevis",
     "rana": "Xenopus laevis",
+    "cotton aphid": "Aphis gossypii",
+    "red flour beetle": "Tribolium castaneum",
 }
 
 PROTEIN_FAMILY_TERMS = [
