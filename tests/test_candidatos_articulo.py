@@ -41,13 +41,35 @@ def test_rankea_proteinas_concretas_sobre_familia():
             "Lipocalin-2",
             "chemosensory protein",
             "bad/candidate",
-        ]
+        ],
+        titulo="Modulation by Lipocalin-2 in Zebrafish",
     )
 
     assert ranked[0] == "Lipocalin-2"
     assert "lipocalin" in ranked
-    assert score_proteina("Lipocalin-2") > score_proteina("LCN2") > score_proteina("lipocalin")
+    assert (
+        score_proteina("Lipocalin-2", titulo="Lipocalin-2 study")
+        > score_proteina("LCN2")
+        > score_proteina("lipocalin")
+    )
     assert "bad/candidate" not in ranked
+
+
+def test_rankea_gen_obp_sobre_familia():
+    ranked = rankear_proteinas(
+        ["odorant binding protein", "AgOBP1", "CSP6"],
+        titulo="AgOBP1 and CSP6 in Aphis gossypii",
+    )
+    assert ranked[0] in {"AgOBP1", "CSP6"}
+    assert score_proteina("AgOBP1") > score_proteina("odorant binding protein")
+
+
+def test_penaliza_lipocalin_numerica_fuera_del_titulo():
+    ranked = rankear_proteinas(
+        ["lipocalin 21", "Lipocalin-2", "lipocalin"],
+        titulo="Lipocalin-2 in zebrafish",
+    )
+    assert ranked[0] == "Lipocalin-2"
 
 
 def test_hit_uniprot_rechaza_falso_positivo_de_acronimo():

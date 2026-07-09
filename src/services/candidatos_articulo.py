@@ -59,6 +59,31 @@ JUNK_ORGANISM_MARKERS = (
     "mrs",
     "iodide",
     "esterase",
+    " and ",
+    "tubule",
+    "safety",
+    "network",
+    "ecotoxicology",
+    "migration",
+    "atrazine",
+    "toxicity",
+)
+
+KNOWN_MODEL_ORGANISMS = frozenset(
+    {
+        "danio rerio",
+        "apis mellifera",
+        "aphis gossypii",
+        "tribolium castaneum",
+        "drosophila melanogaster",
+        "mus musculus",
+        "rattus norvegicus",
+        "homo sapiens",
+        "bombyx mori",
+        "rhopalosiphum padi",
+        "xenopus laevis",
+        "caenorhabditis elegans",
+    }
 )
 
 
@@ -80,17 +105,97 @@ def tokens_significativos(texto: str) -> set[str]:
     }
 
 
+FALSE_GENUS = frozenset(
+    {
+        "contents",
+        "list",
+        "lists",
+        "figure",
+        "table",
+        "supplementary",
+        "available",
+        "online",
+        "creative",
+        "common",
+        "license",
+        "journal",
+        "volume",
+        "pages",
+        "author",
+        "authors",
+        "abstract",
+        "introduction",
+        "materials",
+        "methods",
+        "results",
+        "discussion",
+        "references",
+        "acknowledgments",
+        "funding",
+        "conflict",
+        "data",
+        "software",
+        "malpighian",
+        "heatmap",
+        "general",
+        "acute",
+        "toxicity",
+        "environmental",
+        "safety",
+        "ecotoxicology",
+        "migration",
+        "modulation",
+        "overexpression",
+        "expression",
+        "binding",
+        "chemosensory",
+        "odorant",
+    }
+)
+
+
 def es_organismo_valido(nombre: str) -> bool:
     if not nombre or not BINOMIAL_RE.match(nombre.strip()):
         return False
     lower = nombre.lower()
-    return not any(marker in lower for marker in JUNK_ORGANISM_MARKERS)
+    if any(marker in lower for marker in JUNK_ORGANISM_MARKERS):
+        return False
+    first = nombre.split()[0].lower()
+    if first in FALSE_GENUS:
+        return False
+    second = nombre.split()[1].lower()
+    english_epithets = frozenset(
+        {
+            "lists",
+            "online",
+            "article",
+            "review",
+            "study",
+            "assay",
+            "model",
+            "protein",
+            "proteins",
+            "genes",
+            "gene",
+            "tubule",
+            "tubules",
+            "safety",
+            "network",
+            "available",
+            "commons",
+        }
+    )
+    if second in english_epithets:
+        return False
+    return True
 
 
 def score_organismo(nombre: str, titulo: str | None, texto: str) -> tuple[int, int]:
     """Mayor score = mejor. Desempate por frecuencia en texto."""
     score = 0
     lower_nombre = nombre.lower()
+    if lower_nombre in KNOWN_MODEL_ORGANISMS:
+        score += 80
     if titulo and lower_nombre in titulo.lower():
         score += 100
     if texto:
@@ -129,26 +234,70 @@ def elegir_organismos(
     return ordenados[0], ordenados[1:]
 
 
-def score_proteina(nombre: str) -> int:
+OBP_CSP_GENE_RE = re.compile(
+    r"^(?:[A-Z][a-z]{0,4})?(?:OBP|CSP|PBP|GOBP|ABP)\d+[a-zA-Z]?$",
+    re.IGNORECASE,
+)
+LCN_ACRONYM_RE = re.compile(r"^LCN\d+[a-zA-Z]?$", re.IGNORECASE)
+
+
+def score_proteina(nombre: str, titulo: str | None = None) -> int:
     compact = nombre.strip()
     lower = compact.lower()
-    if compact.isupper() and 2 <= len(compact) <= 8:
-        return 70
-    if re.match(r"^lipocalin[a-z]*[\s-]?\d+", lower):
-        return 100
-    if CONCRETE_PROTEIN_RE.match(compact):
-        return 90
-    if re.search(r"\d", compact) and any(m in lower for m in FAMILY_MARKERS):
-        return 85
-    if lower in FAMILY_TERMS:
-        return 20
-    if any(term in lower for term in FAMILY_TERMS):
-        return 25
-    return 40
+    score = 0
+
+    if OBP_CSP_GENE_RE.match(compact):
+        score = 110
+    elif re.match(r"^lipocalin[a-z]*[\s-]?\d+$", lower):
+        score = 105
+    elif re.match(r"^lipocalin[a-z]*[\s-]?\d+", lower):
+        score = 95
+    elif LCN_ACRONYM_RE.match(compact) or (compact.isupper() and 2 <= len(compact) <= 8):
+        score = 70
+    elif CONCRETE_PROTEIN_RE.match(compact):
+        score = 90
+    elif re.search(r"\d", compact) and any(m in lower for m in FAMILY_MARKERS):
+        score = 85
+    elif lower in FAMILY_TERMS:
+        score = 20
+    elif any(term in lower for term in FAMILY_TERMS):
+        score = 25
+    else:
+        score = 40
+
+    if titulo:
+        t = titulo.lower()
+        if lower in t or normalizar_clave(nombre) in normalizar_clave(titulo):
+            score += 40
+        # Penalizar variantes numericas no mencionadas en titulo si hay otra lipocalina en titulo
+        if "lipocalin" in lower and "lipocalin" in t:
+            title_nums = set(re.findall(r"lipocalin[a-z]*[\s-]?(\d+)", t, flags=re.I))
+            name_nums = set(re.findall(r"lipocalin[a-z]*[\s-]?(\d+)", lower, flags=re.I))
+            if title_nums and name_nums and title_nums.isdisjoint(name_nums):
+                score -= 30
+
+    return score
 
 
-def rankear_proteinas(candidatos: list[str], limite: int = MAX_PROTEINAS) -> list[str]:
+def _prefijo_organismo(organismo: str | None) -> str | None:
+    if not organismo:
+        return None
+    # Aphis gossypii -> Ago aproximado no siempre; usar primeras letras de genero
+    parts = organismo.split()
+    if not parts:
+        return None
+    genus = parts[0]
+    return genus[:3]
+
+
+def rankear_proteinas(
+    candidatos: list[str],
+    limite: int = MAX_PROTEINAS,
+    titulo: str | None = None,
+    organismo: str | None = None,
+) -> list[str]:
     mejores: dict[str, tuple[int, int, str]] = {}
+    pref = (_prefijo_organismo(organismo) or "").lower()
     for raw in candidatos:
         nombre = " ".join(raw.split())
         if not es_candidato_proteina_valido(nombre):
@@ -156,7 +305,18 @@ def rankear_proteinas(candidatos: list[str], limite: int = MAX_PROTEINAS) -> lis
         clave = normalizar_clave(nombre)
         if not clave:
             continue
-        item = (score_proteina(nombre), len(nombre), nombre)
+        score = score_proteina(nombre, titulo=titulo)
+        # Boost genes del mismo genero (AgoCSP1 + Aphis, TcOBP + Tribolium)
+        if pref and nombre.lower().startswith(pref):
+            score += 25
+        # Penalizar genes claramente de otra especie si hay organismo
+        if pref and OBP_CSP_GENE_RE.match(nombre):
+            head = re.match(r"^[A-Za-z]{2,4}", nombre)
+            if head and head.group(0).lower() not in {pref, "obp", "csp", "pbp", "gobp", "abp", "lcn"}:
+                # Bmor* con organismo Tribolium: bajar
+                if not nombre.lower().startswith(pref) and re.match(r"^[A-Z][a-z]", nombre):
+                    score -= 20
+        item = (score, len(nombre), nombre)
         actual = mejores.get(clave)
         if actual is None or item[:2] > actual[:2]:
             mejores[clave] = item
@@ -219,7 +379,18 @@ def build_candidatos_articulo(extraido: ExtractedArticleData) -> CandidatosArtic
     texto = extraido.texto_completo or ""
 
     organismo, secundarios = elegir_organismos(extraido.organismos, titulo, texto)
-    proteinas = rankear_proteinas(extraido.proteinas_candidatas)
+    proteinas = rankear_proteinas(
+        extraido.proteinas_candidatas,
+        titulo=titulo,
+        organismo=organismo,
+    )
+    # Si solo hay genes de otra especie, conservar tambien terminos de familia para UniProt
+    if organismo and proteinas and all(OBP_CSP_GENE_RE.match(p) for p in proteinas[:3]):
+        familias = [p for p in extraido.proteinas_candidatas if p.lower() in FAMILY_TERMS]
+        for fam in familias:
+            if fam not in proteinas:
+                proteinas.append(fam)
+        proteinas = proteinas[:MAX_PROTEINAS]
     agrotoxicos = list(
         dict.fromkeys(
             " ".join(nombre.split())

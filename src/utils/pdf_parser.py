@@ -59,6 +59,74 @@ LIPOCALIN_NAME_RE = re.compile(r"\bLipocalin[a-zA-Z]*[\s-]?\d+\b", re.IGNORECASE
 ACRONYM_NEAR_LIPOCALIN_RE = re.compile(
     r"lipocalin[\w\s\-]{0,25}?\(([A-Z][A-Z0-9]{1,7})\)", re.IGNORECASE
 )
+# Genes concretos tipicos del dominio (AgOBP1, CSP6, TcOBP, LCN2, etc.)
+GENE_SYMBOL_RE = re.compile(
+    r"\b(?:[A-Z][a-z]{0,4})?(?:OBP|CSP|PBP|GOBP|ABP|LCN)\d+[a-zA-Z]?\b"
+)
+# Binomio cientifico suelto (para titulo/abstract sin lista cerrada)
+LOOSE_BINOMIAL_RE = re.compile(r"\b([A-Z][a-z]{2,} [a-z]{3,})\b")
+BINOMIAL_STOPWORDS = frozenset(
+    {
+        "the",
+        "this",
+        "these",
+        "those",
+        "from",
+        "with",
+        "using",
+        "figure",
+        "table",
+        "supplementary",
+        "original",
+        "article",
+        "heatmap",
+        "general",
+        "anion",
+        "capillary",
+        "department",
+        "university",
+        "chemosensory",
+        "odorant",
+        "binding",
+        "protein",
+        "proteins",
+        "atrazine",
+        "migration",
+        "ecotoxicology",
+        "malpighian",
+        "environmental",
+        "safety",
+        "acute",
+        "toxicity",
+    }
+)
+BINOMIAL_SECOND_STOPWORDS = frozenset(
+    {
+        "and",
+        "the",
+        "for",
+        "with",
+        "from",
+        "into",
+        "onto",
+        "assay",
+        "study",
+        "using",
+        "based",
+        "model",
+        "tubule",
+        "tubules",
+        "safety",
+        "network",
+        "article",
+        "review",
+        "proteins",
+        "protein",
+        "gene",
+        "genes",
+        "expression",
+    }
+)
 
 AGROTOXICOS_ESPECIFICOS = [
     "atrazine", "atrazina", "imidacloprid", "chlorpyrifos", "clorpirifos",
@@ -220,15 +288,29 @@ class PdfParser:
         found = set()
         for pattern in ORGANISM_PATTERNS:
             for match in pattern.finditer(texto):
-                if match.groups():
-                    found.add(match.group(0).strip())
+                if match.lastindex:
+                    # Preferir el binomio capturado si existe
+                    found.add(match.group(1).strip() if match.lastindex >= 1 and match.group(1) else match.group(0).strip())
                 else:
-                    found.add(match.group(0))
+                    found.add(match.group(0).strip())
 
         lower = texto.lower()
         for nombre_comun, nombre_cientifico in COMMON_NAME_TO_SCIENTIFIC.items():
             if nombre_comun in lower:
                 found.add(nombre_cientifico)
+
+        # Primeras lineas / titulo suelen traer el organismo del estudio
+        head = "\n".join(texto.splitlines()[:40])
+        for match in LOOSE_BINOMIAL_RE.finditer(head):
+            candidate = match.group(1).strip()
+            parts = candidate.split()
+            if len(parts) < 2:
+                continue
+            if parts[0].lower() in BINOMIAL_STOPWORDS:
+                continue
+            if parts[1].lower() in BINOMIAL_SECOND_STOPWORDS:
+                continue
+            found.add(candidate)
 
         return sorted(found)
 
@@ -241,6 +323,9 @@ class PdfParser:
 
         for match in ACRONYM_NEAR_LIPOCALIN_RE.finditer(texto):
             found.add(match.group(1))
+
+        for match in GENE_SYMBOL_RE.finditer(texto):
+            found.add(match.group(0))
 
         lower = texto.lower()
         for term in PROTEIN_FAMILY_TERMS:

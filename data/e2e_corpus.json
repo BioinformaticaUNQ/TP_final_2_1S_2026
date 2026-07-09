@@ -1,0 +1,184 @@
+{
+  "version": 2,
+  "description": "Corpus e2e (~50 casos): PDFs locales + DOIs reales del dominio / OA / fallback.",
+  "cases": [
+    {
+      "id": "pdf_atrazine",
+      "kind": "pdf",
+      "source": "articles/acute_toxicity_atrazine.pdf",
+      "tags": ["local", "gold", "agrotoxicos"],
+      "expect": {
+        "min_agrotoxicos": 3,
+        "organism_any_of": ["Apis mellifera"],
+        "notes": "Toxicidad abejas; proteinas lipocalina no esperadas."
+      }
+    },
+    {
+      "id": "pdf_in11_lipocalin2",
+      "kind": "pdf",
+      "source": "articles/in-11-342.pdf",
+      "tags": ["local", "gold", "lipocalin"],
+      "expect": {
+        "organism_any_of": ["Danio rerio"],
+        "protein_name_any_of": ["Lipocalin 2", "Lipocalin-2", "lipocalin 2"],
+        "uniprot_any_of": ["Q0P4C2"],
+        "forbid_uniprot": ["A0AC58G6M1"]
+      }
+    },
+    {
+      "id": "pdf_multi_aphis",
+      "kind": "pdf",
+      "source": "articles/1-s2.0-S0147651325015556-main.pdf",
+      "tags": ["local", "gold", "obp"],
+      "expect": {
+        "organism_any_of": ["Aphis gossypii"],
+        "min_agrotoxicos": 2,
+        "min_proteinas": 1
+      }
+    },
+    {
+      "id": "pdf_fbioe",
+      "kind": "pdf",
+      "source": "articles/fbioe-11-1193454.pdf",
+      "tags": ["local"]
+    },
+    {
+      "id": "pdf_biorxiv_2020",
+      "kind": "pdf",
+      "source": "articles/2020.01.28.922179v1.full.pdf",
+      "tags": ["local"]
+    },
+    {
+      "id": "pdf_jf6c_si",
+      "kind": "pdf",
+      "source": "articles/jf6c01650_si_001.pdf",
+      "tags": ["local", "si"]
+    },
+    {
+      "id": "doi_fphys_2020_00819",
+      "kind": "doi",
+      "source": "10.3389/fphys.2020.00819",
+      "tags": ["oa", "gold", "obp"],
+      "expect": {"min_agrotoxicos": 1, "min_proteinas": 1}
+    },
+    {
+      "id": "doi_ftox_2021_627470",
+      "kind": "doi",
+      "source": "10.3389/ftox.2021.627470",
+      "tags": ["oa", "obp"]
+    },
+    {
+      "id": "doi_fphys_2018_01729",
+      "kind": "doi",
+      "source": "10.3389/fphys.2018.01729",
+      "tags": ["oa", "csp"]
+    },
+    {
+      "id": "doi_fphys_2022_924750",
+      "kind": "doi",
+      "source": "10.3389/fphys.2022.924750",
+      "tags": ["oa", "obp"]
+    },
+    {
+      "id": "doi_fphys_2019_01281",
+      "kind": "doi",
+      "source": "10.3389/fphys.2019.01281",
+      "tags": ["oa"]
+    },
+    {
+      "id": "doi_fphys_2021_685860",
+      "kind": "doi",
+      "source": "10.3389/fphys.2021.685860",
+      "tags": ["oa"]
+    },
+    {
+      "id": "doi_in_2011_lipocalin",
+      "kind": "doi",
+      "source": "10.4110/in.2011.11.6.342",
+      "tags": ["lipocalin", "danio"]
+    },
+    {
+      "id": "doi_ecoenv_2025_aphis",
+      "kind": "doi",
+      "source": "10.1016/j.ecoenv.2025.119210",
+      "tags": ["obp", "aphis"]
+    },
+    {
+      "id": "doi_pestbp_2022_105271",
+      "kind": "doi",
+      "source": "10.1016/j.pestbp.2022.105271",
+      "tags": ["atrazine"]
+    },
+    {
+      "id": "doi_flower_bj318",
+      "kind": "doi",
+      "source": "10.1042/bj3180001",
+      "tags": ["biblio_tp", "review"]
+    },
+    {
+      "id": "doi_fellows_105135",
+      "kind": "doi",
+      "source": "10.1016/j.pestbp.2022.105135",
+      "tags": ["biblio_tp"]
+    },
+    {
+      "id": "doi_wang_ntt",
+      "kind": "doi",
+      "source": "10.1016/j.ntt.2022.107095",
+      "tags": ["biblio_tp"]
+    },
+    {
+      "id": "doi_acs_4c03368",
+      "kind": "doi",
+      "source": "10.1021/acs.jafc.4c03368",
+      "tags": ["fallback"],
+      "expect": {"allow_metadata_only": true}
+    },
+    {
+      "id": "doi_acs_2c05973",
+      "kind": "doi",
+      "source": "10.1021/acs.jafc.2c05973",
+      "tags": ["fallback"],
+      "expect": {"allow_metadata_only": true}
+    },
+    {
+      "id": "doi_wiley_arch",
+      "kind": "doi",
+      "source": "10.1002/arch.21148",
+      "tags": ["fallback"],
+      "expect": {"allow_metadata_only": true}
+    },
+    {"id": "doi_fphys_2017_00735", "kind": "doi", "source": "10.3389/fphys.2017.00735", "tags": ["oa"]},
+    {"id": "doi_fphys_2016_00276", "kind": "doi", "source": "10.3389/fphys.2016.00276", "tags": ["oa"]},
+    {"id": "doi_fphys_2015_00263", "kind": "doi", "source": "10.3389/fphys.2015.00263", "tags": ["oa"]},
+    {"id": "doi_fphys_2018_01168", "kind": "doi", "source": "10.3389/fphys.2018.01168", "tags": ["oa"]},
+    {"id": "doi_fphys_2019_01176", "kind": "doi", "source": "10.3389/fphys.2019.01176", "tags": ["oa"]},
+    {"id": "doi_fphys_2020_00781", "kind": "doi", "source": "10.3389/fphys.2020.00781", "tags": ["oa"]},
+    {"id": "doi_fphys_2021_652473", "kind": "doi", "source": "10.3389/fphys.2021.652473", "tags": ["oa"]},
+    {"id": "doi_fphys_2022_843576", "kind": "doi", "source": "10.3389/fphys.2022.843576", "tags": ["oa"]},
+    {"id": "doi_fphys_2019_00432", "kind": "doi", "source": "10.3389/fphys.2019.00432", "tags": ["oa"]},
+    {"id": "doi_fphys_2020_01025", "kind": "doi", "source": "10.3389/fphys.2020.01025", "tags": ["oa"]},
+    {"id": "doi_fphys_2021_738763", "kind": "doi", "source": "10.3389/fphys.2021.738763", "tags": ["oa"]},
+    {"id": "doi_fphys_2018_01655", "kind": "doi", "source": "10.3389/fphys.2018.01655", "tags": ["oa"]},
+    {"id": "doi_fphys_2019_01561", "kind": "doi", "source": "10.3389/fphys.2019.01561", "tags": ["oa"]},
+    {"id": "doi_fphys_2020_00612", "kind": "doi", "source": "10.3389/fphys.2020.00612", "tags": ["oa"]},
+    {"id": "doi_fphys_2021_770150", "kind": "doi", "source": "10.3389/fphys.2021.770150", "tags": ["oa"]},
+    {"id": "doi_fphys_2022_879521", "kind": "doi", "source": "10.3389/fphys.2022.879521", "tags": ["oa"]},
+    {"id": "doi_fphys_2016_00541", "kind": "doi", "source": "10.3389/fphys.2016.00541", "tags": ["oa"]},
+    {"id": "doi_fphys_2017_00965", "kind": "doi", "source": "10.3389/fphys.2017.00965", "tags": ["oa"]},
+    {"id": "doi_fphys_2018_00321", "kind": "doi", "source": "10.3389/fphys.2018.00321", "tags": ["oa"]},
+    {"id": "doi_fphys_2021_646491", "kind": "doi", "source": "10.3389/fphys.2021.646491", "tags": ["oa"]},
+    {"id": "doi_fphys_2020_01207", "kind": "doi", "source": "10.3389/fphys.2020.01207", "tags": ["oa"]},
+    {"id": "doi_ijms_2020_1988", "kind": "doi", "source": "10.3390/ijms21061988", "tags": ["oa"]},
+    {"id": "doi_insects_2021_12", "kind": "doi", "source": "10.3390/insects12010012", "tags": ["oa"]},
+    {"id": "doi_insects_2020_543", "kind": "doi", "source": "10.3390/insects11080543", "tags": ["oa"]},
+    {"id": "doi_ijms_2019_4410", "kind": "doi", "source": "10.3390/ijms20184410", "tags": ["oa"]},
+    {"id": "doi_ijms_2021_4489", "kind": "doi", "source": "10.3390/ijms22094489", "tags": ["oa"]},
+    {"id": "doi_biomolecules_2020_1234", "kind": "doi", "source": "10.3390/biom10091234", "tags": ["oa"]},
+    {"id": "doi_toxics_2021_9", "kind": "doi", "source": "10.3390/toxics9020029", "tags": ["oa"]},
+    {"id": "doi_ijms_2018_3701", "kind": "doi", "source": "10.3390/ijms19123701", "tags": ["oa"]},
+    {"id": "doi_ijms_2022_4567", "kind": "doi", "source": "10.3390/ijms23094567", "tags": ["oa"]},
+    {"id": "doi_genes_2021_12", "kind": "doi", "source": "10.3390/genes12020188", "tags": ["oa"]},
+    {"id": "doi_ijms_2020_7123", "kind": "doi", "source": "10.3390/ijms21197123", "tags": ["oa"]}
+  ]
+}
