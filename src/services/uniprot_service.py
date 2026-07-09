@@ -1,9 +1,16 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 import requests
 from loguru import logger
+
+GENE_LIKE_RE = re.compile(
+    r"^(?:[A-Z][a-z]{0,4})?(?:OBP|CSP|PBP|GOBP|ABP|LCN)\d+[a-zA-Z]?$",
+    re.IGNORECASE,
+)
+SPECIES_PREFIX_RE = re.compile(r"^([A-Z][a-z]{1,4})((?:OBP|CSP|PBP|GOBP|ABP|LCN)\d+[a-zA-Z]?)$")
 
 
 @dataclass
@@ -27,22 +34,12 @@ class ProteinaOrganismoModelo:
 class UniProtService:
     BASE_URL = "https://rest.uniprot.org/uniprotkb/search"
 
-    def fetch_protein(
+    def _search(
         self,
-        nombre_proteina: str,
-        organismo: str | None = None,
+        query: str,
+        nombre_fallback: str | None = None,
     ) -> ProteinaOrganismoModelo | None:
-        if not nombre_proteina:
-            logger.warning("Nombre de proteína vacío. Omitiendo búsqueda en UniProt.")
-            return None
-
-        query_parts = [nombre_proteina]
-        if organismo:
-            query_parts.append(f'organism_name:"{organismo}"')
-
-        query = " AND ".join(query_parts)
         logger.info(f"Consultando UniProt con query: '{query}'")
-
         try:
             response = requests.get(
                 self.BASE_URL,
@@ -50,15 +47,14 @@ class UniProtService:
                 timeout=30,
             )
         except requests.exceptions.RequestException as e:
-            logger.error(f"Fallo de red en UniProt para '{nombre_proteina}': {e}")
+            logger.error(f"Fallo de red en UniProt para '{query}': {e}")
             return None
 
         if response.status_code != 200:
             logger.error(f"Error {response.status_code} en UniProt.")
             return None
 
-        data = response.json()
-        results = data.get("results", [])
+        results = response.json().get("results", [])
         if not results:
             logger.warning(f"UniProt no arrojó resultados para '{query}'.")
             return None
@@ -77,18 +73,65 @@ class UniProtService:
                     funcion_biologica = texts[0].get("value")
                 break
 
-        nombre = recommended_name.get("fullName", {}).get("value") or nombre_proteina
+        nombre = (
+            recommended_name.get("fullName", {}).get("value")
+            or nombre_fallback
+            or first.get("uniProtkbId")
+            or "unknown"
+        )
         uniprot_id = first.get("primaryAccession")
-
         logger.success(f"Proteína encontrada: {nombre} (ID: {uniprot_id})")
 
         return ProteinaOrganismoModelo(
             nombre_proteina=nombre,
-            organismo=organism.get("scientificName") or organismo,
+            organismo=organism.get("scientificName"),
             uniprot_id=uniprot_id,
             pdb_code=None,
             funcion_biologica=funcion_biologica,
         )
+
+    @staticmethod
+    def _query_variants(nombre_proteina: str, organismo: str | None) -> list[str]:
+        """Arma queries de mayor a menor especificidad."""
+        name = nombre_proteina.strip()
+        variants: list[str] = []
+
+        def add(q: str) -> None:
+            if q and q not in variants:
+                variants.append(q)
+
+        if organismo:
+            add(f'{name} AND organism_name:"{organismo}"')
+        add(name)
+
+        if GENE_LIKE_RE.match(name):
+            core = name
+            m = SPECIES_PREFIX_RE.match(name)
+            if m:
+                core = m.group(2)  # BmorOBP27 -> OBP27
+            if organismo:
+                add(f'gene:{core} AND organism_name:"{organismo}"')
+                add(f'gene_exact:{core} AND organism_name:"{organismo}"')
+                add(f'{core} AND organism_name:"{organismo}"')
+            add(f"gene:{core}")
+            add(core)
+
+        return variants
+
+    def fetch_protein(
+        self,
+        nombre_proteina: str,
+        organismo: str | None = None,
+    ) -> ProteinaOrganismoModelo | None:
+        if not nombre_proteina:
+            logger.warning("Nombre de proteína vacío. Omitiendo búsqueda en UniProt.")
+            return None
+
+        for query in self._query_variants(nombre_proteina, organismo):
+            hit = self._search(query, nombre_fallback=nombre_proteina)
+            if hit is not None:
+                return hit
+        return None
 
     def fetch_sequence(self, uniprot_id: str) -> str | None:
         if not uniprot_id:

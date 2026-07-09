@@ -344,6 +344,23 @@ def hit_uniprot_aceptable(candidato: str, nombre_hit: str | None) -> bool:
     if any(marker in c_lower for marker in FAMILY_MARKERS):
         return any(marker in h_lower for marker in FAMILY_MARKERS)
 
+    # Genes OBP/CSP: aceptar hits de la familia aunque el nombre UniProt sea descriptivo
+    if OBP_CSP_GENE_RE.match(candidato) or LCN_ACRONYM_RE.match(candidato):
+        family_hit = any(
+            token in h_lower
+            for token in (
+                "odorant",
+                "chemosensory",
+                "pheromone",
+                "obp",
+                "csp",
+                "lipocalin",
+                "binding protein",
+            )
+        )
+        if family_hit:
+            return True
+
     if candidato.isupper() and 2 <= len(candidato) <= 8:
         return candidato.lower() in h_lower
 

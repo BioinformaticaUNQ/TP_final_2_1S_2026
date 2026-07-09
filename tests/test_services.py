@@ -179,6 +179,48 @@ def test_crossref_service_no_crashea_si_stream_se_corta(monkeypatch, tmp_path):
     assert not list(tmp_path.glob("*.tmp"))
 
 
+def test_uniprot_query_variants_incluyen_fallback_gen(monkeypatch):
+    queries = UniProtService._query_variants("OBP11", "Tribolium castaneum")
+    assert any("organism_name:\"Tribolium castaneum\"" in q for q in queries)
+    assert any(q.startswith("gene:") for q in queries)
+    assert "OBP11" in queries
+
+
+def test_uniprot_fetch_protein_prueba_fallbacks(monkeypatch):
+    calls = []
+
+    class FakeResponse:
+        def __init__(self, results):
+            self.status_code = 200
+            self._results = results
+
+        def json(self):
+            return {"results": self._results}
+
+    def fake_get(url, params=None, timeout=30):
+        calls.append(params["query"])
+        if "gene:OBP11" in params["query"] and "Tribolium" in params["query"]:
+            return FakeResponse(
+                [
+                    {
+                        "primaryAccession": "A0A1B2C3D4",
+                        "proteinDescription": {
+                            "recommendedName": {"fullName": {"value": "Odorant-binding protein 11"}}
+                        },
+                        "organism": {"scientificName": "Tribolium castaneum"},
+                        "comments": [],
+                    }
+                ]
+            )
+        return FakeResponse([])
+
+    monkeypatch.setattr(requests, "get", fake_get)
+    hit = UniProtService().fetch_protein("OBP11", "Tribolium castaneum")
+    assert hit is not None
+    assert hit.uniprot_id == "A0A1B2C3D4"
+    assert any("gene:OBP11" in q for q in calls)
+
+
 def test_pubchem_service_parsea_smiles_logp_y_fuente(monkeypatch, pubchem_payload):
     requested = {}
 

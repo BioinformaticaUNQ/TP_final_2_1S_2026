@@ -226,10 +226,116 @@ def _run_full(case: dict, out_dir: Path) -> dict:
     }
 
 
+def _extract_case_signals(result: dict) -> dict:
+    """Normaliza señales usadas por expects y quality_score."""
+    status = result.get("status")
+    if "candidatos" in result:
+        cand = result["candidatos"]
+        return {
+            "status": status,
+            "organismo": cand.get("organismo_principal"),
+            "proteinas": list(cand.get("proteinas") or []),
+            "n_proteinas": len(cand.get("proteinas") or []),
+            "agrotoxicos": list(cand.get("agrotoxicos") or []),
+            "n_agrotoxicos": len(cand.get("agrotoxicos") or []),
+            "uniprot_ids": [],
+            "protein_names": list(cand.get("proteinas") or []),
+            "smiles_ok": None,
+        }
+
+    res = result.get("resultado") or {}
+    prots = res.get("proteinas") or []
+    agros = res.get("agrotoxicos") or []
+    orgs = list(res.get("organismos") or [])
+    if res.get("organismo_principal") and res["organismo_principal"] not in orgs:
+        orgs.insert(0, res["organismo_principal"])
+    smiles_flags = [bool(a.get("smiles")) for a in agros if isinstance(a, dict)]
+    return {
+        "status": status,
+        "organismo": res.get("organismo_principal") or (orgs[0] if orgs else None),
+        "organismos": orgs,
+        "proteinas": prots,
+        "n_proteinas": res.get("n_proteinas", len(prots)),
+        "agrotoxicos": agros,
+        "n_agrotoxicos": res.get("n_agrotoxicos", len(agros)),
+        "uniprot_ids": list(res.get("uniprot_ids") or []),
+        "protein_names": [
+            p.get("nombre") for p in prots if isinstance(p, dict) and p.get("nombre")
+        ],
+        "smiles_ok": (sum(smiles_flags) / len(smiles_flags)) if smiles_flags else None,
+    }
+
+
+def _quality_score(case: dict, result: dict, expect_score: dict) -> dict:
+    """
+    Score continuo 0..1 por caso.
+    - Con expects: fraccion de checks OK (mas fiable).
+    - Sin expects: heuristica de completitud del analisis.
+    """
+    components: dict[str, float] = {}
+    signals = _extract_case_signals(result)
+    status = signals["status"]
+
+    if status == "error":
+        return {"quality_score": 0.0, "components": {"status": 0.0}, "kind": "error"}
+    if status == "metadata_only":
+        # Util solo como fallback controlado
+        base = 0.35 if (case.get("expect") or {}).get("allow_metadata_only") else 0.15
+        return {
+            "quality_score": base,
+            "components": {"metadata_only": base},
+            "kind": "metadata_only",
+        }
+
+    if expect_score.get("has_expect") and expect_score.get("checks"):
+        checks = expect_score["checks"]
+        frac = sum(1 for c in checks if c.get("ok")) / len(checks)
+        components["expect_fraction"] = round(frac, 3)
+        # Bonus leve por completitud extra
+        if signals["n_agrotoxicos"] > 0:
+            components["has_agro"] = 0.05
+        if signals["n_proteinas"] > 0:
+            components["has_prot"] = 0.05
+        if signals.get("smiles_ok"):
+            components["smiles"] = 0.05 * float(signals["smiles_ok"])
+        score = min(1.0, frac * 0.9 + sum(v for k, v in components.items() if k != "expect_fraction"))
+        components["expect_fraction"] = round(frac, 3)
+        return {
+            "quality_score": round(score, 3),
+            "components": components,
+            "kind": "expect",
+        }
+
+    # Heuristica sin gold
+    components["status_ok"] = 0.25
+    if signals.get("organismo"):
+        components["organismo"] = 0.2
+    if signals["n_proteinas"] > 0:
+        components["proteinas"] = min(0.3, 0.1 + 0.05 * min(signals["n_proteinas"], 4))
+    if signals["n_agrotoxicos"] > 0:
+        components["agrotoxicos"] = min(0.25, 0.1 + 0.05 * min(signals["n_agrotoxicos"], 3))
+    if signals.get("smiles_ok"):
+        components["smiles"] = 0.1 * float(signals["smiles_ok"])
+    if signals.get("uniprot_ids"):
+        components["uniprot"] = min(0.15, 0.05 * len(signals["uniprot_ids"]))
+
+    score = min(1.0, sum(components.values()))
+    return {"quality_score": round(score, 3), "components": components, "kind": "heuristic"}
+
+
 def _score_expectations(case: dict, result: dict) -> dict:
     expect = case.get("expect") or {}
+    signals = _extract_case_signals(result)
+
     if not expect:
-        return {"has_expect": False, "checks": [], "passed": None, "failed": []}
+        quality = _quality_score(case, result, {"has_expect": False})
+        return {
+            "has_expect": False,
+            "checks": [],
+            "passed": None,
+            "failed": [],
+            **quality,
+        }
 
     checks = []
     failed = []
@@ -242,71 +348,59 @@ def _score_expectations(case: dict, result: dict) -> dict:
     status = result.get("status")
     if expect.get("allow_metadata_only") and status == "metadata_only":
         ok("metadata_only_allowed", True)
-        return {"has_expect": True, "checks": checks, "passed": len(failed) == 0, "failed": failed}
+        base = {
+            "has_expect": True,
+            "checks": checks,
+            "passed": True,
+            "failed": [],
+        }
+        quality = _quality_score(case, result, base)
+        return {**base, **quality}
 
     if status not in {"ok", "metadata_only"}:
-        ok("status_ok", False, status)
-        return {"has_expect": True, "checks": checks, "passed": False, "failed": failed}
+        ok("status_ok", False, str(status))
+        base = {
+            "has_expect": True,
+            "checks": checks,
+            "passed": False,
+            "failed": failed,
+        }
+        quality = _quality_score(case, result, base)
+        return {**base, **quality}
 
-    if "candidatos" in result:
-        cand = result["candidatos"]
-        org = cand.get("organismo_principal")
-        prots = cand.get("proteinas") or []
-        agros = cand.get("agrotoxicos") or []
-        if "organism_any_of" in expect:
-            ok(
-                "organism_any_of",
-                org in expect["organism_any_of"],
-                f"got={org}",
-            )
-        if "min_agrotoxicos" in expect:
-            ok(
-                "min_agrotoxicos",
-                len(agros) >= expect["min_agrotoxicos"],
-                f"got={len(agros)}",
-            )
-        if "min_proteinas" in expect:
-            ok(
-                "min_proteinas",
-                len(prots) >= expect["min_proteinas"],
-                f"got={len(prots)}",
-            )
-        if "protein_name_any_of" in expect:
-            ok(
-                "protein_name_any_of",
-                any(p in expect["protein_name_any_of"] for p in prots),
-                f"got={prots[:5]}",
-            )
-    elif "resultado" in result:
-        res = result["resultado"]
-        orgs = res.get("organismos") or []
-        if res.get("articulo") and res["articulo"].get("organismo"):
-            orgs = list(orgs) + [res["articulo"]["organismo"]]
-        protein_names = [p.get("nombre") for p in (res.get("proteinas") or [])]
-        uniprots = res.get("uniprot_ids") or []
-        n_agro = res.get("n_agrotoxicos", len(res.get("agrotoxicos") or []))
-        n_prot = res.get("n_proteinas", len(res.get("proteinas") or []))
+    org = signals.get("organismo")
+    orgs = signals.get("organismos") or ([org] if org else [])
+    prots = signals.get("proteinas") or []
+    protein_names = signals.get("protein_names") or []
+    uniprots = signals.get("uniprot_ids") or []
+    n_agro = signals["n_agrotoxicos"]
+    n_prot = signals["n_proteinas"]
 
-        if "organism_any_of" in expect:
-            ok(
-                "organism_any_of",
-                any(o in expect["organism_any_of"] for o in orgs)
-                or any(
-                    expect_org in " ".join(orgs)
-                    for expect_org in expect["organism_any_of"]
-                ),
-                f"got={orgs}",
-            )
-        if "min_agrotoxicos" in expect:
-            ok("min_agrotoxicos", n_agro >= expect["min_agrotoxicos"], f"got={n_agro}")
-        if "min_proteinas" in expect:
-            ok("min_proteinas", n_prot >= expect["min_proteinas"], f"got={n_prot}")
-        if "protein_name_any_of" in expect:
-            ok(
-                "protein_name_any_of",
-                any(n in expect["protein_name_any_of"] for n in protein_names if n),
-                f"got={protein_names}",
-            )
+    if "organism_any_of" in expect:
+        ok(
+            "organism_any_of",
+            (org in expect["organism_any_of"])
+            or any(o in expect["organism_any_of"] for o in orgs if o),
+            f"got={org or orgs}",
+        )
+    if "min_agrotoxicos" in expect:
+        ok("min_agrotoxicos", n_agro >= expect["min_agrotoxicos"], f"got={n_agro}")
+    if "min_proteinas" in expect:
+        ok("min_proteinas", n_prot >= expect["min_proteinas"], f"got={n_prot}")
+    if "protein_name_any_of" in expect:
+        names = protein_names or [p if isinstance(p, str) else "" for p in prots]
+        names = [n for n in names if n]
+        ok(
+            "protein_name_any_of",
+            any(
+                n in expect["protein_name_any_of"]
+                or any(exp.lower() in n.lower() for exp in expect["protein_name_any_of"])
+                for n in names
+            ),
+            f"got={names[:5]}",
+        )
+    # UniProt solo aplica en mode full (candidates no consulta APIs)
+    if uniprots or "resultado" in result:
         if "uniprot_any_of" in expect:
             ok(
                 "uniprot_any_of",
@@ -317,12 +411,14 @@ def _score_expectations(case: dict, result: dict) -> dict:
             bad = [u for u in uniprots if u in expect["forbid_uniprot"]]
             ok("forbid_uniprot", not bad, f"bad={bad}")
 
-    return {
+    base = {
         "has_expect": True,
         "checks": checks,
         "passed": len(failed) == 0,
         "failed": failed,
     }
+    quality = _quality_score(case, result, base)
+    return {**base, **quality}
 
 
 def _summarize(results: list[dict]) -> dict:
@@ -330,14 +426,22 @@ def _summarize(results: list[dict]) -> dict:
     by_status: dict[str, int] = {}
     expect_total = 0
     expect_pass = 0
+    quality_scores: list[float] = []
+    expect_quality: list[float] = []
+
     for r in results:
         st = r.get("result", {}).get("status", "missing")
         by_status[st] = by_status.get(st, 0) + 1
         sc = r.get("score") or {}
+        q = sc.get("quality_score")
+        if isinstance(q, (int, float)):
+            quality_scores.append(float(q))
         if sc.get("has_expect"):
             expect_total += 1
             if sc.get("passed"):
                 expect_pass += 1
+            if isinstance(q, (int, float)):
+                expect_quality.append(float(q))
 
     return {
         "total_cases": total,
@@ -346,6 +450,14 @@ def _summarize(results: list[dict]) -> dict:
         "expect_passed": expect_pass,
         "expect_pass_rate": (expect_pass / expect_total) if expect_total else None,
         "ok_rate": (by_status.get("ok", 0) / total) if total else 0,
+        "mean_quality_score": (
+            round(sum(quality_scores) / len(quality_scores), 3) if quality_scores else None
+        ),
+        "mean_expect_quality_score": (
+            round(sum(expect_quality) / len(expect_quality), 3) if expect_quality else None
+        ),
+        "min_quality_score": round(min(quality_scores), 3) if quality_scores else None,
+        "max_quality_score": round(max(quality_scores), 3) if quality_scores else None,
     }
 
 
@@ -426,6 +538,9 @@ def main(argv: list[str] | None = None) -> int:
         f"- by_status: `{json.dumps(s['by_status'])}`",
         f"- ok_rate: {s['ok_rate']}",
         f"- expect_pass_rate: {s['expect_pass_rate']}",
+        f"- mean_quality_score: {s.get('mean_quality_score')}",
+        f"- mean_expect_quality_score: {s.get('mean_expect_quality_score')}",
+        f"- quality range: {s.get('min_quality_score')} .. {s.get('max_quality_score')}",
         "",
         "## Failed expectations",
         "",

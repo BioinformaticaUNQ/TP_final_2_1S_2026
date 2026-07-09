@@ -60,11 +60,24 @@ No re-ejecutes la suite completa si ya te pasaron un `report.json` fresco: **lee
 
 1. `summary.total_cases`, `by_status`, `ok_rate`
 2. `expect_pass_rate` y lista de expects fallidos
-3. Casos gold locales (`pdf_in11_lipocalin2`, `pdf_multi_aphis`, `pdf_atrazine`)
-4. Top 5 peores fallos (organismo mal, 0 proteinas con paper bueno, UniProt prohibido, etc.)
-5. Comparacion con corrida anterior si te dan path `baseline` vs `actual`
-6. Veredicto: **pass / pass-with-notes / fail**
-7. **Top 3 mejoras concretas** de parser/ranking (sin reescribir el sistema)
+3. **`mean_quality_score`** (0..1, todos los casos) y **`mean_expect_quality_score`** (solo gold)
+4. `min_quality_score` / `max_quality_score`
+5. Casos gold locales (`pdf_in11_lipocalin2`, `pdf_multi_aphis`, `pdf_atrazine`, `doi_fphys_2020_00819`)
+6. Top 5 peores fallos por `quality_score` bajo o expects fallidos
+7. Comparacion con corrida anterior si te dan path `baseline` vs `actual` (**delta de mean_quality_score y expect_pass_rate**)
+8. Veredicto: **pass / pass-with-notes / fail** y si **mejoro / empeoro / igual** vs baseline
+9. **Top 3 mejoras concretas** de parser/ranking (sin reescribir el sistema)
+
+### Como interpretar scores
+
+| Metrica | Significado |
+|---------|-------------|
+| `ok_rate` | Operativo (no crasheo / hubo PDF) |
+| `expect_pass_rate` | Fraccion de casos gold con todos los checks OK |
+| `mean_quality_score` | Media 0..1: con expects = checks + bonus; sin expects = completitud heuristica |
+| `mean_expect_quality_score` | Calidad media solo en gold (la mas util para TDD) |
+
+Un cambio es **mejor** si sube `mean_expect_quality_score` o `expect_pass_rate` sin bajar el otro de forma grave.
 
 ## Checks gold (si el expect esta en el corpus)
 
