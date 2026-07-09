@@ -92,9 +92,14 @@ class UniProtService:
 
     @staticmethod
     def _query_variants(nombre_proteina: str, organismo: str | None) -> list[str]:
-        """Arma queries de mayor a menor especificidad."""
+        """Arma queries de mayor a menor especificidad.
+
+        Si hay organismo y el nombre parece gen (OBP/CSP), no se buscan
+        hits sin organismo: evita devolver otra especie y filtrarla despues.
+        """
         name = nombre_proteina.strip()
         variants: list[str] = []
+        is_gene = bool(GENE_LIKE_RE.match(name))
 
         def add(q: str) -> None:
             if q and q not in variants:
@@ -102,9 +107,10 @@ class UniProtService:
 
         if organismo:
             add(f'{name} AND organism_name:"{organismo}"')
-        add(name)
+        elif not is_gene:
+            add(name)
 
-        if GENE_LIKE_RE.match(name):
+        if is_gene:
             core = name
             m = SPECIES_PREFIX_RE.match(name)
             if m:
@@ -113,8 +119,16 @@ class UniProtService:
                 add(f'gene:{core} AND organism_name:"{organismo}"')
                 add(f'gene_exact:{core} AND organism_name:"{organismo}"')
                 add(f'{core} AND organism_name:"{organismo}"')
-            add(f"gene:{core}")
-            add(core)
+                # Fallback de familia en el mismo organismo (TP insectos)
+                if re.search(r"OBP|PBP|GOBP|ABP", core, re.I):
+                    add(f'organism_name:"{organismo}" AND (odorant binding OR OBP)')
+                if re.search(r"CSP", core, re.I):
+                    add(f'organism_name:"{organismo}" AND (chemosensory OR CSP)')
+            else:
+                add(f"gene:{core}")
+                add(core)
+        elif not organismo:
+            add(name)
 
         return variants
 

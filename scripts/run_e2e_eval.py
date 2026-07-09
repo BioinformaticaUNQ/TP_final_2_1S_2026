@@ -319,7 +319,20 @@ def _quality_score(case: dict, result: dict, expect_score: dict) -> dict:
     if signals.get("uniprot_ids"):
         components["uniprot"] = min(0.15, 0.05 * len(signals["uniprot_ids"]))
 
-    score = min(1.0, sum(components.values()))
+    # Penalizar mezcla de organismos en proteinas (hits off-species)
+    prots = signals.get("proteinas") or []
+    orgs_hit = {
+        p.get("organismo")
+        for p in prots
+        if isinstance(p, dict) and p.get("organismo")
+    }
+    principal = signals.get("organismo")
+    if principal and orgs_hit:
+        off = [o for o in orgs_hit if o and principal.split()[0].lower() not in o.lower()]
+        if off:
+            components["off_species_penalty"] = -0.15 * min(1.0, len(off) / max(1, len(orgs_hit)))
+
+    score = max(0.0, min(1.0, sum(components.values())))
     return {"quality_score": round(score, 3), "components": components, "kind": "heuristic"}
 
 

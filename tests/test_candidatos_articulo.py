@@ -73,9 +73,40 @@ def test_penaliza_lipocalin_numerica_fuera_del_titulo():
 
 
 def test_hit_uniprot_rechaza_falso_positivo_de_acronimo():
-    assert hit_uniprot_aceptable("Lipocalin-2", "Lipocalin 2")
-    assert hit_uniprot_aceptable("chemosensory protein", "chemosensory protein 3")
+    assert hit_uniprot_aceptable(
+        "Lipocalin-2",
+        "Lipocalin 2",
+        organismo_esperado="Danio rerio",
+        organismo_hit="Danio rerio",
+    )
+    assert hit_uniprot_aceptable(
+        "chemosensory protein",
+        "chemosensory protein 3",
+        organismo_esperado="Aphis gossypii",
+        organismo_hit="Aphis gossypii",
+    )
     assert not hit_uniprot_aceptable("LCN2", "Matrix metalloproteinase-9")
+
+
+def test_hit_uniprot_rechaza_especie_incorrecta():
+    from services.candidatos_articulo import organismo_uniprot_aceptable
+
+    assert organismo_uniprot_aceptable("Tribolium castaneum", "Tribolium castaneum")
+    assert organismo_uniprot_aceptable("Aphis gossypii", "Aphis gossypii")
+    assert not organismo_uniprot_aceptable("Tribolium castaneum", "Locusta migratoria")
+    assert not organismo_uniprot_aceptable("Danio rerio", "Homo sapiens")
+    assert not hit_uniprot_aceptable(
+        "OBP11",
+        "Odorant-binding protein 11",
+        organismo_esperado="Tribolium castaneum",
+        organismo_hit="Locusta migratoria",
+    )
+    assert hit_uniprot_aceptable(
+        "OBP11",
+        "Odorant-binding protein 11",
+        organismo_esperado="Tribolium castaneum",
+        organismo_hit="Tribolium castaneum",
+    )
 
 
 def test_afinidad_solo_se_asigna_con_un_agrotoxico():

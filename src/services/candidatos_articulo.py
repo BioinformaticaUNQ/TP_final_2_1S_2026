@@ -325,8 +325,42 @@ def rankear_proteinas(
     return [nombre for _, _, nombre in ranked[:limite]]
 
 
-def hit_uniprot_aceptable(candidato: str, nombre_hit: str | None) -> bool:
+def organismo_uniprot_aceptable(
+    organismo_esperado: str | None,
+    organismo_hit: str | None,
+) -> bool:
+    """Si el paper tiene organismo modelo, el hit UniProt debe ser de ese taxón."""
+    if not organismo_esperado:
+        return True
+    if not organismo_hit:
+        return False
+
+    esp = " ".join(organismo_esperado.split()).lower()
+    hit = " ".join(organismo_hit.split()).lower()
+    if esp == hit:
+        return True
+    if esp in hit or hit in esp:
+        return True
+
+    # Mismo genero (Aphis gossypii vs Aphis sp.)
+    esp_genus = esp.split()[0]
+    hit_genus = hit.split()[0]
+    if esp_genus == hit_genus and len(esp_genus) > 2:
+        return True
+    return False
+
+
+def hit_uniprot_aceptable(
+    candidato: str,
+    nombre_hit: str | None,
+    *,
+    organismo_esperado: str | None = None,
+    organismo_hit: str | None = None,
+) -> bool:
     if not candidato or not nombre_hit:
+        return False
+
+    if not organismo_uniprot_aceptable(organismo_esperado, organismo_hit):
         return False
 
     c_norm = normalizar_clave(candidato)

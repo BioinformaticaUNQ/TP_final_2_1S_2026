@@ -179,11 +179,13 @@ def test_crossref_service_no_crashea_si_stream_se_corta(monkeypatch, tmp_path):
     assert not list(tmp_path.glob("*.tmp"))
 
 
-def test_uniprot_query_variants_incluyen_fallback_gen(monkeypatch):
+def test_uniprot_query_variants_incluyen_fallback_gen():
     queries = UniProtService._query_variants("OBP11", "Tribolium castaneum")
-    assert any("organism_name:\"Tribolium castaneum\"" in q for q in queries)
-    assert any(q.startswith("gene:") for q in queries)
-    assert "OBP11" in queries
+    assert any('organism_name:"Tribolium castaneum"' in q for q in queries)
+    assert any("gene:OBP11" in q for q in queries)
+    # No buscar gen suelto sin organismo (evita off-species)
+    assert "OBP11" not in queries
+    assert any("odorant binding" in q for q in queries)
 
 
 def test_uniprot_fetch_protein_prueba_fallbacks(monkeypatch):
@@ -219,6 +221,7 @@ def test_uniprot_fetch_protein_prueba_fallbacks(monkeypatch):
     assert hit is not None
     assert hit.uniprot_id == "A0A1B2C3D4"
     assert any("gene:OBP11" in q for q in calls)
+    assert all("Locusta" not in q for q in calls)
 
 
 def test_pubchem_service_parsea_smiles_logp_y_fuente(monkeypatch, pubchem_payload):

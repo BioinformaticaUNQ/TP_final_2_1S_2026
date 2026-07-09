@@ -363,6 +363,44 @@ def test_build_resultado_descarta_hit_uniprot_absurdo(monkeypatch, tmp_path):
     assert [p.uniprot_id for p in resultado.proteinas] == ["Q0P4C2"]
 
 
+def test_build_resultado_descarta_uniprot_de_otra_especie(monkeypatch, tmp_path):
+    pdf_path = tmp_path / "paper.pdf"
+    pdf_path.write_bytes(b"%PDF-fake")
+    extraido = ExtractedArticleData(
+        titulo="OBPs in Tribolium castaneum",
+        organismos=["Tribolium castaneum"],
+        proteinas_candidatas=["OBP11", "odorant binding protein"],
+        agrotoxicos_candidatos=["imidacloprid"],
+    )
+
+    def fake_fetch_protein(name, organism):
+        if name == "OBP11":
+            return ProteinaOrganismoModelo(
+                nombre_proteina="Odorant-binding protein 11",
+                organismo="Locusta migratoria",
+                uniprot_id="WRONG1",
+            )
+        return ProteinaOrganismoModelo(
+            nombre_proteina="odorant binding protein",
+            organismo="Tribolium castaneum",
+            uniprot_id="TC_OBP",
+        )
+
+    monkeypatch.setattr(app, "parse_pdf", lambda source: extraido)
+    monkeypatch.setattr(app, "fetch_doi", lambda doi: None)
+    monkeypatch.setattr(app, "fetch_protein", fake_fetch_protein)
+    monkeypatch.setattr(
+        app,
+        "fetch_compound",
+        lambda name, familia_quimica=None: Agrotoxico(nombre_comun=name),
+    )
+
+    resultado = app.build_resultado_desde_pdf(pdf_path, ejecutar_blast=False)
+
+    assert [p.uniprot_id for p in resultado.proteinas] == ["TC_OBP"]
+    assert all(p.organismo == "Tribolium castaneum" for p in resultado.proteinas)
+
+
 def test_build_resultado_no_asigna_afinidad_si_hay_varios_agros(monkeypatch, tmp_path):
     pdf_path = tmp_path / "paper.pdf"
     pdf_path.write_bytes(b"%PDF-fake")

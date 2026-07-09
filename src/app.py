@@ -90,24 +90,49 @@ def build_resultado_desde_pdf(
     organismo = candidatos.organismo_principal
 
     ids_vistos = set()
+
+    def _aceptar_proteina(candidata: str, proteina) -> bool:
+        if proteina is None:
+            return False
+        if not hit_uniprot_aceptable(
+            candidata,
+            proteina.nombre_proteina,
+            organismo_esperado=organismo,
+            organismo_hit=proteina.organismo,
+        ):
+            click.echo(
+                f"Aviso: se descarto hit UniProt '{proteina.nombre_proteina}' "
+                f"({proteina.organismo}) para candidato '{candidata}' "
+                f"(esperado organismo={organismo})."
+            )
+            return False
+        if proteina.uniprot_id in ids_vistos:
+            return False
+        ids_vistos.add(proteina.uniprot_id)
+        resultado.proteinas.append(proteina)
+        return True
+
     for candidata in candidatos.proteinas:
         try:
             proteina = fetch_protein(candidata, organismo)
         except Exception as exc:
             click.echo(f"Aviso: fallo la consulta a UniProt para '{candidata}': {exc}")
             continue
-        if proteina is None:
-            continue
-        if not hit_uniprot_aceptable(candidata, proteina.nombre_proteina):
-            click.echo(
-                f"Aviso: se descarto hit UniProt '{proteina.nombre_proteina}' "
-                f"para candidato '{candidata}'."
-            )
-            continue
-        if proteina.uniprot_id in ids_vistos:
-            continue
-        ids_vistos.add(proteina.uniprot_id)
-        resultado.proteinas.append(proteina)
+        _aceptar_proteina(candidata, proteina)
+
+    # Si no hubo hits validos, reintentar familias genericas del dominio en el organismo del paper
+    if not resultado.proteinas and organismo:
+        for familia in (
+            "odorant binding protein",
+            "chemosensory protein",
+            "lipocalin",
+        ):
+            try:
+                proteina = fetch_protein(familia, organismo)
+            except Exception:
+                continue
+            if _aceptar_proteina(familia, proteina):
+                break
 
     nombres_vistos = set()
     for nombre in candidatos.agrotoxicos:
