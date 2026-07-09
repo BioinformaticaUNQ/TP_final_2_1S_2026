@@ -120,13 +120,19 @@ def build_resultado_desde_pdf(
             continue
         _aceptar_proteina(candidata, proteina)
 
-    # Si no hubo hits validos, reintentar familias genericas del dominio en el organismo del paper
-    if not resultado.proteinas and organismo:
-        for familia in (
-            "odorant binding protein",
-            "chemosensory protein",
-            "lipocalin",
-        ):
+    # Si habia candidatos de familia/gen pero UniProt no dio hits validos, reintentar familia en el organismo
+    if not resultado.proteinas and organismo and candidatos.proteinas:
+        hay_obp = any("obp" in p.lower() or "odorant" in p.lower() for p in candidatos.proteinas)
+        hay_csp = any("csp" in p.lower() or "chemosensory" in p.lower() for p in candidatos.proteinas)
+        hay_lipo = any("lipocalin" in p.lower() or "lcn" in p.lower() for p in candidatos.proteinas)
+        familias_fallback: list[str] = []
+        if hay_obp:
+            familias_fallback.append("odorant binding protein")
+        if hay_csp:
+            familias_fallback.append("chemosensory protein")
+        if hay_lipo:
+            familias_fallback.append("lipocalin")
+        for familia in familias_fallback:
             try:
                 proteina = fetch_protein(familia, organismo)
             except Exception:
