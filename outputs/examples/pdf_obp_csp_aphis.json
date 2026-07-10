@@ -17,16 +17,65 @@
   },
   "proteinas": [
     {
-      "nombre": "chemosensory protein",
-      "organismo": "Apis mellifera",
-      "uniprot_id": "A0A8U0WQD7",
+      "nombre": "CSP1",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "B7TVG4",
       "pdb_code": null,
       "funcion_biologica": null
     },
     {
-      "nombre": "odorant binding protein",
-      "organismo": "Apis mellifera",
-      "uniprot_id": "Q9U9J6",
+      "nombre": "CSP2",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1SZ17",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP6",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1JPA1",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP7",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1SSQ2",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP3",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KDI0",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP7",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KQ25",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP9",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1K8F6",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP18",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "A0A9P0IXM4",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "PxCSP1",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KDZ3",
       "pdb_code": null,
       "funcion_biologica": null
     }
@@ -37,11 +86,11 @@
       "familia_quimica": "Organofosforado",
       "smiles": "CCOP(=S)(OCC)OC1=NC(=C(C=C1Cl)Cl)Cl",
       "logP": 5.3,
-      "tipo_afinidad": "Ki",
-      "valor_afinidad": "48.33",
-      "unidad_afinidad": "μM",
-      "metodo_experimental": "ITC, SPR, docking, fluorescence, molecular docking",
-      "fuente_dato": "PubChem PUG REST; Texto del articulo"
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
     },
     {
       "nombre_comun": "imidacloprid",

@@ -47,13 +47,13 @@ tp-bioinfo --help
 Procesar un PDF individual sin BLAST, util para pruebas rapidas:
 
 ```powershell
-tp-bioinfo articles\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
+tp-bioinfo articles\c_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
 ```
 
-Procesar todos los PDFs de un directorio:
+Procesar todos los PDFs de un subdirectorio:
 
 ```powershell
-tp-bioinfo articles --skip-blast --output-dir output\manual_dir
+tp-bioinfo articles\bc_dominio --skip-blast --output-dir output\manual_dir
 ```
 
 Procesar un DOI descargando el PDF cuando el publisher lo permite:
@@ -62,11 +62,29 @@ Procesar un DOI descargando el PDF cuando el publisher lo permite:
 tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --output-dir output\manual_doi --pdf-dir output\manual_doi\pdfs
 ```
 
-Si el PDF no se puede descargar, la herramienta conserva un fallback y genera un JSON con metadatos de Crossref:
+Si el PDF no se puede descargar, la herramienta genera un JSON con metadatos de Crossref:
 
 ```powershell
 tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\manual_doi_fallback
 ```
+
+## Demo oral (3 corridas)
+
+Los papers estan clasificados en `articles/` segun lo que se espera del resultado. Guia completa: `articles/README.md`.
+
+| Orden | Objetivo | Entrada | Flags |
+|-------|----------|---------|-------|
+| 1 | B+C (OBP + agro) | DOI `10.3389/fphys.2020.00819` | `--skip-blast --no-save-pdf` |
+| 2 | B+D (lipocalina + humanos) | `articles\bd_homologos\in-11-342.pdf` | `--blast-mode local` |
+| 3 | Limite honesto | `articles\c_agrotoxicos\...` o DOI ACS | `--skip-blast` |
+
+```powershell
+tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\demo\bc
+tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local --output-dir output\demo\bd
+tp-bioinfo articles\c_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\demo\c
+```
+
+Bloques del JSON: **A** articulo, **B** proteina, **C** agrotoxico, **D** homologos humanos.
 
 ## Opciones principales
 
@@ -75,33 +93,25 @@ tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\manual_doi_
 --skip-blast                 Omite BLASTp para pruebas rapidas.
 --blast-mode [local|remote]  Usa BLAST local o remoto. Por defecto: remote.
 --pdf-dir PATH               Directorio para PDFs descargados desde DOI.
+--no-save-pdf                Analiza el PDF en memoria sin guardarlo en disco.
 ```
 
 ## BLAST
 
-Por defecto, si no se usa `--skip-blast`, la herramienta intenta BLAST remoto mediante NCBI. Ese modo puede tardar varios minutos por proteina y depende de la disponibilidad del servicio externo.
+Por defecto, si no se usa `--skip-blast`, la herramienta intenta BLAST remoto mediante NCBI. Ese modo puede tardar varios minutos y depende del servicio externo.
 
-Para demos y pruebas repetibles se recomienda configurar BLAST local:
+Para demos y pruebas repetibles se recomienda BLAST local:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
+tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
 ```
 
-Luego ejecutar:
-
-```powershell
-tp-bioinfo articles\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
-```
-
-Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y PubChem sin esperar BLAST:
-
-```powershell
-tp-bioinfo articles --skip-blast --output-dir output\quick_test
-```
+Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y PubChem sin esperar BLAST.
 
 ## Salidas
 
-Cada articulo genera un JSON con esta estructura general:
+Cada articulo genera un JSON con:
 
 ```text
 articulo
@@ -110,23 +120,11 @@ agrotoxicos
 homologos_humanos
 ```
 
-La carpeta `outputs/examples` contiene salidas de ejemplo versionadas, incluyendo:
+Ejemplos versionados (actuales) en `outputs/examples/` — ver `outputs/examples/README.md`.
 
-- PDF local con agrotoxicos.
-- PDF local con afinidad detectada.
-- DOI con descarga de PDF.
-- DOI con fallback Crossref.
-- Ejemplo con BLAST local y 15 homologos humanos.
-
-Tambien hay una lista de DOI utiles para pruebas en:
-
-```text
-articles/dois_casos_prueba.md
-```
+Las corridas locales de trabajo van a `output/` (ignorada por git).
 
 ## Documentacion tecnica
-
-La arquitectura del proyecto esta documentada en:
 
 ```text
 docs/architecture.md
@@ -134,24 +132,18 @@ docs/architecture.md
 
 ## Tests
 
-Ejecutar la suite:
-
 ```powershell
 pytest -q
 ```
 
-Los tests unitarios usan mocks para evitar llamadas reales a servicios externos. Hay una prueba de BLAST local que se saltea automaticamente si no esta instalado el binario y la base local.
+Los tests unitarios usan mocks para evitar llamadas reales a servicios externos. Hay una prueba de BLAST local que se saltea si no esta el binario y la base local.
 
 ## Build del paquete
-
-El proyecto puede construirse como wheel instalable:
 
 ```powershell
 python -m pip install build
 python -m build --wheel
 ```
-
-Instalar el wheel generado en una venv limpia:
 
 ```powershell
 python -m venv .venv_packaging_test
@@ -167,18 +159,23 @@ src/
   models/
   services/
   utils/
-articles/
-outputs/examples/
+articles/                 # PDFs de prueba por categoria de demo
+  bc_dominio/             # proteina + agro
+  bd_homologos/           # proteina + BLAST
+  c_agrotoxicos/          # solo compuestos
+  otros/                  # no usar como demo principal
+outputs/examples/         # JSON de ejemplo versionados
 scripts/
 tests/
 docs/
+data/                     # corpus e2e y (local) BLAST
 ```
 
-- `src/app.py`: punto de entrada de la CLI.
-- `src/services`: clientes para Crossref, UniProt, PubChem y BLAST.
-- `src/models`: modelos de datos usados en la salida JSON.
+- `src/app.py`: CLI.
+- `src/services`: Crossref, UniProt, PubChem, BLAST, seleccion de candidatos.
+- `src/models`: modelos del JSON.
 - `src/utils`: parser de PDFs.
-- `articles`: PDFs y DOI de prueba.
-- `outputs/examples`: JSON de ejemplo.
-- `scripts`: helpers de ejecucion y configuracion local.
-- `tests`: tests unitarios y de empaquetado.
+- `articles`: material de prueba y demo (ver `articles/README.md`).
+- `outputs/examples`: salidas de referencia.
+- `scripts`: helpers (BLAST local, etc.).
+- `tests`: unitarios y empaquetado.

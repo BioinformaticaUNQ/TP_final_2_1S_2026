@@ -1,33 +1,38 @@
 # Ejemplos de salida
 
-Estos JSON son salidas de ejemplo. La mayoria fueron generadas con `--skip-blast` para que sean rapidas y reproducibles. El ejemplo `pdf_blast_local_in_11_342.json` incluye homologos humanos calculados con BLAST local.
+JSON versionados alineados con las categorias de `articles/README.md`.
+Regenerados con el pipeline actual (organismo filtrado, ranking de proteina principal, BLAST solo sobre esa proteina).
 
-## Archivos
+## Mapa ejemplo ↔ caso
 
-| Archivo | Entrada | Que muestra |
-| --- | --- | --- |
-| `pdf_agrotoxicos_atrazine.json` | `articles/acute_toxicity_atrazine.pdf` | Metadatos, agrotoxicos, familias quimicas, SMILES y LogP |
-| `pdf_afinidad_multi_insecticide.json` | `articles/1-s2.0-S0147651325015556-main.pdf` | Proteinas, agrotoxicos y un valor de afinidad extraido del texto |
-| `doi_descarga_frontiers.json` | DOI `10.3389/fphys.2020.00819` | Flujo DOI con PDF descargado y posterior parseo |
-| `doi_fallback_crossref.json` | DOI `10.1021/acs.jafc.4c03368` | Fallback a metadatos Crossref cuando el publisher bloquea PDF |
-| `pdf_blast_local_in_11_342.json` | `articles/in-11-342.pdf` | Proteinas y 15 homologos humanos obtenidos con BLAST local |
+| Archivo | Entrada | Que demuestra | Bloques |
+| --- | --- | --- | --- |
+| `doi_descarga_frontiers.json` | DOI `10.3389/fphys.2020.00819` | OBP *Tribolium* + pesticidas PubChem | A + B + C |
+| `pdf_obp_csp_aphis.json` | `articles/bc_dominio/1-s2.0-S0147651325015556-main.pdf` | OBP/CSP *Aphis* + insecticidas | A + B + C |
+| `pdf_blast_local_in_11_342.json` | `articles/bd_homologos/in-11-342.pdf` | Lipocalin-2 prioritario + homologos humanos (BLAST local) | A + B + D |
+| `pdf_agrotoxicos_atrazine.json` | `articles/c_agrotoxicos/acute_toxicity_atrazine.pdf` | Solo agrotóxicos (sin proteinas inventadas) | A + C |
+| `doi_fallback_crossref.json` | DOI `10.1021/acs.jafc.4c03368` | PDF bloqueado → solo metadatos Crossref | A |
+
+## Notas honestas
+
+- En `pdf_blast_local_in_11_342.json` los homologos son los que devuelve el proteoma local para la secuencia principal (pueden ser menos de 15 si BLAST no encuentra mas hits utiles).
+- Afinidad null en multi-agro es intencional: no se pega un Ki al primer compuesto al azar.
+- `funcion_biologica` null es frecuente en entradas UniProt sin comentario FUNCTION.
 
 ## Reproducir
 
 ```powershell
-.\.venv_test\Scripts\tp-bioinfo.exe articles\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\examples_source\pdf_agrotoxicos
+tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\examples_source\bc_frontiers
 
-.\.venv_test\Scripts\tp-bioinfo.exe articles\1-s2.0-S0147651325015556-main.pdf --skip-blast --output-dir output\examples_source\pdf_afinidad
+tp-bioinfo articles\bc_dominio\1-s2.0-S0147651325015556-main.pdf --skip-blast --output-dir output\examples_source\bc_aphis
 
-.\.venv_test\Scripts\tp-bioinfo.exe 10.3389/fphys.2020.00819 --skip-blast --output-dir output\examples_source\doi_descarga --pdf-dir output\examples_source\doi_descarga\pdfs
+tp-bioinfo articles\c_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\examples_source\c_atrazine
 
-.\.venv_test\Scripts\tp-bioinfo.exe 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\examples_source\doi_fallback --pdf-dir output\examples_source\doi_fallback\pdfs
+tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --no-save-pdf --output-dir output\examples_source\fallback
 ```
 
-Para reproducir el ejemplo con homologos humanos, primero configurar BLAST local:
+BLAST local (requiere `scripts\setup_blast_local.ps1`):
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
-
-.\.venv_test\Scripts\tp-bioinfo.exe articles\in-11-342.pdf --blast-mode local --output-dir output\examples_source\blast_local
+tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local --output-dir output\examples_source\bd_blast
 ```

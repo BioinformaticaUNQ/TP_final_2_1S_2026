@@ -9,7 +9,11 @@ import click
 from models import Agrotoxico, Articulo, ResultadoArticulo
 from utils.pdf_parser import PdfInput, parse_pdf
 from services.blast_service import buscar_homologos_humanos
-from services.candidatos_articulo import build_candidatos_articulo, hit_uniprot_aceptable
+from services.candidatos_articulo import (
+    build_candidatos_articulo,
+    es_titulo_util,
+    hit_uniprot_aceptable,
+)
 from services.crossref_service import fetch_doi, fetch_pdf_bytes
 from services.pubchem_service import fetch_compound
 from services.uniprot_service import fetch_protein, fetch_sequence
@@ -85,6 +89,12 @@ def build_resultado_desde_pdf(
         articulo = fetch_doi(extraido.doi)
     if articulo is None:
         articulo = Articulo(doi=extraido.doi or "", titulo=extraido.titulo)
+    elif articulo.titulo and (
+        not es_titulo_util(extraido.titulo)
+        or (es_titulo_util(articulo.titulo) and articulo.titulo != extraido.titulo)
+    ):
+        extraido.titulo = articulo.titulo
+        candidatos = build_candidatos_articulo(extraido)
 
     resultado = ResultadoArticulo(articulo=articulo)
     organismo = candidatos.organismo_principal
@@ -161,31 +171,36 @@ def build_resultado_desde_pdf(
         resultado.proteinas[0].pdb_code = candidatos.codigos_pdb[0]
 
     if ejecutar_blast:
-        for proteina in resultado.proteinas:
-            if not proteina.uniprot_id:
-                continue
-            if proteina.organismo and "homo sapiens" in proteina.organismo.lower():
-                continue
+        proteina_blast = next(
+            (
+                p
+                for p in resultado.proteinas
+                if p.uniprot_id
+                and not (p.organismo and "homo sapiens" in p.organismo.lower())
+            ),
+            None,
+        )
+        if proteina_blast is not None:
             try:
-                secuencia = fetch_sequence(proteina.uniprot_id)
+                secuencia = fetch_sequence(proteina_blast.uniprot_id)
             except Exception as exc:
-                click.echo(f"Aviso: no se pudo obtener la secuencia de {proteina.uniprot_id}: {exc}")
-                continue
-            if not secuencia:
-                continue
-            try:
-                homologos = buscar_homologos_humanos(
-                    secuencia,
-                    max_hits=MAX_HOMOLOGOS_TOTALES,
-                    mode=blast_mode,
+                click.echo(
+                    f"Aviso: no se pudo obtener la secuencia de {proteina_blast.uniprot_id}: {exc}"
                 )
-            except Exception as exc:
-                click.echo(f"Aviso: fallo BLASTp para {proteina.uniprot_id}: {exc}")
-                continue
-            resultado.homologos.extend(homologos)
-
-        resultado.homologos.sort(key=lambda h: h.evalue if h.evalue is not None else float("inf"))
-        resultado.homologos = resultado.homologos[:MAX_HOMOLOGOS_TOTALES]
+                secuencia = None
+            if secuencia:
+                try:
+                    homologos = buscar_homologos_humanos(
+                        secuencia,
+                        max_hits=MAX_HOMOLOGOS_TOTALES,
+                        mode=blast_mode,
+                    )
+                    homologos.sort(
+                        key=lambda h: h.evalue if h.evalue is not None else float("inf")
+                    )
+                    resultado.homologos = homologos[:MAX_HOMOLOGOS_TOTALES]
+                except Exception as exc:
+                    click.echo(f"Aviso: fallo BLASTp para {proteina_blast.uniprot_id}: {exc}")
 
     return resultado
 

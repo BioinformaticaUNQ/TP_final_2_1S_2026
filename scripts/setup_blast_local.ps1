@@ -49,4 +49,4 @@ Write-Host ""
 Write-Host "BLAST local listo."
 & $Blastp -version
 Write-Host ""
-Write-Host "Probar: tp-bioinfo articles\in-11-342.pdf --blast-mode local"
+Write-Host "Probar: tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local"

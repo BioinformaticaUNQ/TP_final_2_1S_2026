@@ -8,6 +8,13 @@ from pathlib import Path
 import requests
 from loguru import logger
 
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _strip_html(texto: str) -> str:
+    limpio = _HTML_TAG_RE.sub("", texto)
+    return re.sub(r"\s+", " ", limpio).strip()
+
 
 @dataclass
 class Articulo:
@@ -71,7 +78,8 @@ class CrossrefService:
         titles = message.get("title", [])
         container_titles = message.get("container-title", [])
 
-        articulo.titulo = titles[0] if titles else None
+        raw_title = titles[0] if titles else None
+        articulo.titulo = _strip_html(raw_title) if raw_title else None
         articulo.revista = container_titles[0] if container_titles else None
 
         if "published-print" in message:

@@ -15,23 +15,9 @@
   },
   "proteinas": [
     {
-      "nombre": "Matrix metalloproteinase-9",
-      "organismo": "Danio rerio",
-      "uniprot_id": "A0AC58G6M1",
-      "pdb_code": null,
-      "funcion_biologica": "Matrix metalloproteinase that plays an essential role in local proteolysis of the extracellular matrix and in leukocyte migration. Could play a role in bone osteoclastic resorption. Cleaves KiSS1 at a Gly-|-Leu bond. Cleaves NINJ1 to generate the Secreted ninjurin-1 form. Cleaves type IV and type V collagen into large C-terminal three quarter fragments and shorter N-terminal one quarter fragments. Degrades fibronectin but not laminin or Pz-peptide"
-    },
-    {
       "nombre": "Lipocalin 2",
       "organismo": "Danio rerio",
       "uniprot_id": "Q0P4C2",
-      "pdb_code": null,
-      "funcion_biologica": null
-    },
-    {
-      "nombre": "Apolipoprotein D",
-      "organismo": "Danio rerio",
-      "uniprot_id": "Q3B7Q5",
       "pdb_code": null,
       "funcion_biologica": null
     },
@@ -46,109 +32,60 @@
   "agrotoxicos": [],
   "homologos_humanos": [
     {
-      "uniprot_id": "P14780",
-      "nombre": "Matrix metalloproteinase-9",
-      "pct_identidad": 58.58,
-      "pct_similitud": 74.63,
-      "evalue": 0.0
+      "uniprot_id": "Q6UWW0",
+      "nombre": "Lipocalin-15",
+      "pct_identidad": 28.73,
+      "pct_similitud": 51.38,
+      "evalue": 2.07741e-21
     },
     {
-      "uniprot_id": "P08253",
-      "nombre": "72 kDa type IV collagenase",
-      "pct_identidad": 47.14,
-      "pct_similitud": 62.72,
-      "evalue": 2.2473e-162
+      "uniprot_id": "P41222",
+      "nombre": "Prostaglandin-H2 D-isomerase",
+      "pct_identidad": 28.73,
+      "pct_similitud": 48.07,
+      "evalue": 5.48661e-21
     },
     {
-      "uniprot_id": "P02753",
-      "nombre": "Retinol-binding protein 4",
-      "pct_identidad": 53.76,
-      "pct_similitud": 73.41,
-      "evalue": 1.68432e-70
+      "uniprot_id": "P02760",
+      "nombre": "Protein AMBP",
+      "pct_identidad": 24.39,
+      "pct_similitud": 50.0,
+      "evalue": 1.01866e-14
     },
     {
-      "uniprot_id": "P05090",
-      "nombre": "Apolipoprotein D",
-      "pct_identidad": 50.88,
-      "pct_similitud": 67.84,
-      "evalue": 4.20599e-61
+      "uniprot_id": "P07360",
+      "nombre": "Complement component C8 gamma chain",
+      "pct_identidad": 22.84,
+      "pct_similitud": 47.53,
+      "evalue": 1.12461e-12
     },
     {
-      "uniprot_id": "P45452",
-      "nombre": "Collagenase 3",
-      "pct_identidad": 35.97,
-      "pct_similitud": 50.36,
-      "evalue": 4.36093e-43
+      "uniprot_id": "P09466",
+      "nombre": "Glycodelin",
+      "pct_identidad": 25.32,
+      "pct_similitud": 46.2,
+      "evalue": 4.17434e-08
     },
     {
-      "uniprot_id": "P22894",
-      "nombre": "Neutrophil collagenase",
-      "pct_identidad": 33.89,
-      "pct_similitud": 48.66,
-      "evalue": 5.23114e-42
+      "uniprot_id": "Q6ZST4",
+      "nombre": "Lipocalin-like 1 protein",
+      "pct_identidad": 27.08,
+      "pct_similitud": 45.83,
+      "evalue": 2.2515e-05
     },
     {
-      "uniprot_id": "P09238",
-      "nombre": "Stromelysin-2",
-      "pct_identidad": 35.91,
-      "pct_similitud": 52.9,
-      "evalue": 9.56193e-42
+      "uniprot_id": "P80188",
+      "nombre": "Neutrophil gelatinase-associated lipocalin",
+      "pct_identidad": 23.46,
+      "pct_similitud": 41.98,
+      "evalue": 0.000101183
     },
     {
-      "uniprot_id": "Q9H306",
-      "nombre": "Matrix metalloproteinase-27",
-      "pct_identidad": 34.33,
-      "pct_similitud": 51.0,
-      "evalue": 1.05721e-39
-    },
-    {
-      "uniprot_id": "P24347",
-      "nombre": "Stromelysin-3",
-      "pct_identidad": 33.98,
-      "pct_similitud": 47.57,
-      "evalue": 8.24751e-38
-    },
-    {
-      "uniprot_id": "P02751",
-      "nombre": "Fibronectin",
-      "pct_identidad": 53.97,
-      "pct_similitud": 67.46,
-      "evalue": 3.35709e-37
-    },
-    {
-      "uniprot_id": "O60882",
-      "nombre": "Matrix metalloproteinase-20",
-      "pct_identidad": 33.1,
-      "pct_similitud": 49.65,
-      "evalue": 1.51641e-34
-    },
-    {
-      "uniprot_id": "P03956",
-      "nombre": "Interstitial collagenase",
-      "pct_identidad": 31.38,
-      "pct_similitud": 45.17,
-      "evalue": 1.16264e-33
-    },
-    {
-      "uniprot_id": "P08254",
-      "nombre": "Stromelysin-1",
-      "pct_identidad": 32.64,
-      "pct_similitud": 51.39,
-      "evalue": 1.49084e-33
-    },
-    {
-      "uniprot_id": "P51512",
-      "nombre": "Matrix metalloproteinase-16",
-      "pct_identidad": 30.0,
-      "pct_similitud": 46.56,
-      "evalue": 6.03088e-33
-    },
-    {
-      "uniprot_id": "P50281",
-      "nombre": "Matrix metalloproteinase-14",
-      "pct_identidad": 31.94,
-      "pct_similitud": 49.35,
-      "evalue": 2.50787e-32
+      "uniprot_id": "Q9NY56",
+      "nombre": "Odorant-binding protein 2a",
+      "pct_identidad": 24.28,
+      "pct_similitud": 41.04,
+      "evalue": 0.000151934
     }
   ]
 }

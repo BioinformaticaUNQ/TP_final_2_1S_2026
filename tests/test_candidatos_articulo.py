@@ -72,6 +72,34 @@ def test_penaliza_lipocalin_numerica_fuera_del_titulo():
     assert ranked[0] == "Lipocalin-2"
 
 
+def test_titulo_http_no_cuenta_como_titulo_util():
+    from services.candidatos_articulo import es_titulo_util
+
+    assert not es_titulo_util("http://dx.doi.org/10.4110/in.2011.11.6.342 ORIGINAL ARTICLE")
+    assert es_titulo_util("Modulation of Glial Migration by Lipocalin-2 in Zebrafish")
+
+
+def test_rankea_lipocalin2_con_titulo_crossref_aunque_pdf_tenga_basura():
+    ranked = rankear_proteinas(
+        ["lipocalin 21", "Lipocalin 2", "LCN2", "lipocalin"],
+        titulo="Modulation of Glial and Neuronal Migration by Lipocalin-2 in Zebrafish",
+    )
+    assert ranked[0] in {"Lipocalin 2", "LCN2"}
+    assert ranked.index("Lipocalin 2") < ranked.index("lipocalin 21")
+
+
+def test_penaliza_prefijo_genico_de_otra_especie():
+    ranked = rankear_proteinas(
+        ["SfruOBP18", "OBP3", "CSP1"],
+        titulo="OBP and CSP in Aphis gossypii",
+        organismo="Aphis gossypii",
+    )
+    assert ranked[0] in {"OBP3", "CSP1"}
+    assert ranked.index("OBP3") < ranked.index("SfruOBP18") or ranked.index("CSP1") < ranked.index(
+        "SfruOBP18"
+    )
+
+
 def test_hit_uniprot_rechaza_falso_positivo_de_acronimo():
     assert hit_uniprot_aceptable(
         "Lipocalin-2",

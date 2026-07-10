@@ -5,7 +5,7 @@
     {
       "id": "pdf_atrazine",
       "kind": "pdf",
-      "source": "articles/acute_toxicity_atrazine.pdf",
+      "source": "articles/c_agrotoxicos/acute_toxicity_atrazine.pdf",
       "tags": ["local", "gold", "agrotoxicos"],
       "expect": {
         "min_agrotoxicos": 3,
@@ -16,7 +16,7 @@
     {
       "id": "pdf_in11_lipocalin2",
       "kind": "pdf",
-      "source": "articles/in-11-342.pdf",
+      "source": "articles/bd_homologos/in-11-342.pdf",
       "tags": ["local", "gold", "lipocalin"],
       "expect": {
         "organism_any_of": ["Danio rerio"],
@@ -28,7 +28,7 @@
     {
       "id": "pdf_multi_aphis",
       "kind": "pdf",
-      "source": "articles/1-s2.0-S0147651325015556-main.pdf",
+      "source": "articles/bc_dominio/1-s2.0-S0147651325015556-main.pdf",
       "tags": ["local", "gold", "obp"],
       "expect": {
         "organism_any_of": ["Aphis gossypii"],
@@ -39,19 +39,19 @@
     {
       "id": "pdf_fbioe",
       "kind": "pdf",
-      "source": "articles/fbioe-11-1193454.pdf",
+      "source": "articles/otros/fbioe-11-1193454.pdf",
       "tags": ["local"]
     },
     {
       "id": "pdf_biorxiv_2020",
       "kind": "pdf",
-      "source": "articles/2020.01.28.922179v1.full.pdf",
+      "source": "articles/otros/2020.01.28.922179v1.full.pdf",
       "tags": ["local"]
     },
     {
       "id": "pdf_jf6c_si",
       "kind": "pdf",
-      "source": "articles/jf6c01650_si_001.pdf",
+      "source": "articles/otros/jf6c01650_si_001.pdf",
       "tags": ["local", "si"]
     },
     {

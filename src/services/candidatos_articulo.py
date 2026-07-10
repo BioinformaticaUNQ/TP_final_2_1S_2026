@@ -241,6 +241,20 @@ OBP_CSP_GENE_RE = re.compile(
 LCN_ACRONYM_RE = re.compile(r"^LCN\d+[a-zA-Z]?$", re.IGNORECASE)
 
 
+def es_titulo_util(titulo: str | None) -> bool:
+    if not titulo:
+        return False
+    t = titulo.strip()
+    if len(t) < 12:
+        return False
+    lower = t.lower()
+    if lower.startswith("http://") or lower.startswith("https://"):
+        return False
+    if re.fullmatch(r"10\.\d{4,9}/\S+", t):
+        return False
+    return True
+
+
 def score_proteina(nombre: str, titulo: str | None = None) -> int:
     compact = nombre.strip()
     lower = compact.lower()
@@ -265,29 +279,44 @@ def score_proteina(nombre: str, titulo: str | None = None) -> int:
     else:
         score = 40
 
-    if titulo:
-        t = titulo.lower()
-        if lower in t or normalizar_clave(nombre) in normalizar_clave(titulo):
-            score += 40
-        # Penalizar variantes numericas no mencionadas en titulo si hay otra lipocalina en titulo
+    if es_titulo_util(titulo):
+        t = titulo.lower().replace("-", " ")
+        n = lower.replace("-", " ")
+        if n in t or normalizar_clave(nombre) in normalizar_clave(titulo):
+            score += 50
         if "lipocalin" in lower and "lipocalin" in t:
             title_nums = set(re.findall(r"lipocalin[a-z]*[\s-]?(\d+)", t, flags=re.I))
             name_nums = set(re.findall(r"lipocalin[a-z]*[\s-]?(\d+)", lower, flags=re.I))
             if title_nums and name_nums and title_nums.isdisjoint(name_nums):
-                score -= 30
+                score -= 50
+        if re.search(r"\blcn\s*2\b", t) and re.match(r"^(lcn2|lipocalin[\s-]*2)$", lower):
+            score += 20
 
     return score
+
+
+FOREIGN_GENE_PREFIXES = frozenset(
+    {
+        "sfru",
+        "bmor",
+        "dmel",
+        "tcas",
+        "agly",
+        "rpad",
+        "amell",
+        "ms",
+        "harm",
+    }
+)
 
 
 def _prefijo_organismo(organismo: str | None) -> str | None:
     if not organismo:
         return None
-    # Aphis gossypii -> Ago aproximado no siempre; usar primeras letras de genero
     parts = organismo.split()
     if not parts:
         return None
-    genus = parts[0]
-    return genus[:3]
+    return parts[0][:3]
 
 
 def rankear_proteinas(
@@ -306,24 +335,24 @@ def rankear_proteinas(
         if not clave:
             continue
         score = score_proteina(nombre, titulo=titulo)
-        # Boost genes del mismo genero (AgoCSP1 + Aphis, TcOBP + Tribolium)
         if pref and nombre.lower().startswith(pref):
             score += 25
-        # Penalizar genes claramente de otra especie si hay organismo
         if pref and OBP_CSP_GENE_RE.match(nombre):
-            head = re.match(r"^[A-Za-z]{2,4}", nombre)
-            if head and head.group(0).lower() not in {pref, "obp", "csp", "pbp", "gobp", "abp", "lcn"}:
-                # Bmor* con organismo Tribolium: bajar
-                if not nombre.lower().startswith(pref) and re.match(r"^[A-Z][a-z]", nombre):
-                    score -= 20
+            head = re.match(r"^([A-Za-z]{2,4})", nombre)
+            if head:
+                token = head.group(1).lower()
+                if token in FOREIGN_GENE_PREFIXES and not nombre.lower().startswith(pref):
+                    score -= 60
+                elif token not in {pref, "obp", "csp", "pbp", "gobp", "abp", "lcn"}:
+                    if re.match(r"^[A-Z][a-z]", nombre) and not nombre.lower().startswith(pref):
+                        score -= 25
         item = (score, len(nombre), nombre)
         actual = mejores.get(clave)
-        if actual is None or item[:2] > actual[:2]:
+        if actual is None or (item[0], -item[1]) > (actual[0], -actual[1]):
             mejores[clave] = item
 
-    ranked = sorted(mejores.values(), key=lambda item: (item[0], item[1]), reverse=True)
+    ranked = sorted(mejores.values(), key=lambda item: (-item[0], item[1], item[2]))
     return [nombre for _, _, nombre in ranked[:limite]]
-
 
 def organismo_uniprot_aceptable(
     organismo_esperado: str | None,

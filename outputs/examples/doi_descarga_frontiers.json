@@ -15,16 +15,9 @@
   },
   "proteinas": [
     {
-      "nombre": "chemosensory protein",
-      "organismo": "Apis mellifera",
-      "uniprot_id": "A0A8U0WQD7",
-      "pdb_code": null,
-      "funcion_biologica": null
-    },
-    {
-      "nombre": "odorant binding protein",
-      "organismo": "Apis mellifera",
-      "uniprot_id": "Q9U9J6",
+      "nombre": "OBP1",
+      "organismo": "Tribolium castaneum",
+      "uniprot_id": "D2A5B1",
       "pdb_code": null,
       "funcion_biologica": null
     }
