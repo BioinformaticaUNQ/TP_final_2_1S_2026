@@ -47,13 +47,13 @@ tp-bioinfo --help
 Procesar un PDF individual sin BLAST, util para pruebas rapidas:
 
 ```powershell
-tp-bioinfo articles\c_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
+tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
 ```
 
 Procesar todos los PDFs de un subdirectorio:
 
 ```powershell
-tp-bioinfo articles\bc_dominio --skip-blast --output-dir output\manual_dir
+tp-bioinfo articles\proteina_y_agro --skip-blast --output-dir output\manual_dir
 ```
 
 Procesar un DOI descargando el PDF cuando el publisher lo permite:
@@ -74,17 +74,15 @@ Los papers estan clasificados en `articles/` segun lo que se espera del resultad
 
 | Orden | Objetivo | Entrada | Flags |
 |-------|----------|---------|-------|
-| 1 | B+C (OBP + agro) | DOI `10.3389/fphys.2020.00819` | `--skip-blast --no-save-pdf` |
-| 2 | B+D (lipocalina + humanos) | `articles\bd_homologos\in-11-342.pdf` | `--blast-mode local` |
-| 3 | Limite honesto | `articles\c_agrotoxicos\...` o DOI ACS | `--skip-blast` |
+| 1 | Proteina + agrotoxico | DOI `10.3389/fphys.2020.00819` | `--skip-blast --no-save-pdf` |
+| 2 | Proteina + homologos humanos | `articles\proteina_y_homologos\in-11-342.pdf` | `--blast-mode local` |
+| 3 | Limite del sistema (salida pobre a proposito) | `articles\solo_agrotoxicos\...` o DOI ACS | `--skip-blast` |
 
 ```powershell
-tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\demo\bc
-tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local --output-dir output\demo\bd
-tp-bioinfo articles\c_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\demo\c
+tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\demo\proteina_agro
+tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\demo\homologos
+tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\demo\solo_agro
 ```
-
-Bloques del JSON: **A** articulo, **B** proteina, **C** agrotoxico, **D** homologos humanos.
 
 ## Opciones principales
 
@@ -104,7 +102,7 @@ Para demos y pruebas repetibles se recomienda BLAST local:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
-tp-bioinfo articles\bd_homologos\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
+tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
 ```
 
 Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y PubChem sin esperar BLAST.
@@ -114,13 +112,13 @@ Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y
 Cada articulo genera un JSON con:
 
 ```text
-articulo
-proteinas
-agrotoxicos
-homologos_humanos
+articulo            # metadatos del paper
+proteinas           # organismo modelo + UniProt
+agrotoxicos         # compuestos + PubChem
+homologos_humanos   # BLASTp (si no se omite)
 ```
 
-Ejemplos versionados (actuales) en `outputs/examples/` — ver `outputs/examples/README.md`.
+Ejemplos versionados en `outputs/examples/` — ver `outputs/examples/README.md`.
 
 Las corridas locales de trabajo van a `output/` (ignorada por git).
 
@@ -159,16 +157,16 @@ src/
   models/
   services/
   utils/
-articles/                 # PDFs de prueba por categoria de demo
-  bc_dominio/             # proteina + agro
-  bd_homologos/           # proteina + BLAST
-  c_agrotoxicos/          # solo compuestos
-  otros/                  # no usar como demo principal
-outputs/examples/         # JSON de ejemplo versionados
+articles/                      # PDFs de prueba por tipo de resultado esperado
+  proteina_y_agro/             # OBP/CSP + insecticidas
+  proteina_y_homologos/        # lipocalina + BLAST a humanos
+  solo_agrotoxicos/            # toxicologia sin proteina del dominio
+  otros/                       # no usar como demo principal
+outputs/examples/              # JSON de ejemplo versionados
 scripts/
 tests/
 docs/
-data/                     # corpus e2e y (local) BLAST
+data/                          # corpus e2e y (local) BLAST
 ```
 
 - `src/app.py`: CLI.
