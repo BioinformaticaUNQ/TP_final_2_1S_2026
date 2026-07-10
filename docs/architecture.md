@@ -302,7 +302,7 @@ Incluyen ejemplos con:
 - El parser usa heuristicas y vocabularios controlados; no pretende reemplazar curacion manual.
 - La asignacion de afinidad al primer agrotoxico detectado es una simplificacion.
 - BLAST remoto puede tardar varios minutos y depender de colas externas.
-- BLAST local es preferido para demo y pruebas reproducibles.
+- BLAST local es preferido para pruebas reproducibles.
 - Algunos publishers exponen link PDF en Crossref pero bloquean la descarga con HTTP 403.
 - Algunos campos pueden quedar `null` cuando el articulo no reporta el dato o la API externa no lo devuelve.
 

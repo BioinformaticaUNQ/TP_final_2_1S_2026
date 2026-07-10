@@ -44,7 +44,7 @@ tp-bioinfo --help
 
 ## Uso
 
-Procesar un PDF individual sin BLAST, util para pruebas rapidas:
+Procesar un PDF individual sin BLAST:
 
 ```powershell
 tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\manual_pdf
@@ -68,20 +68,21 @@ Si el PDF no se puede descargar, la herramienta genera un JSON con metadatos de 
 tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\manual_doi_fallback
 ```
 
-## Demo oral (3 corridas)
+## Casos de prueba de referencia
 
-Los papers estan clasificados en `articles/` segun lo que se espera del resultado. Guia completa: `articles/README.md`.
+Los articulos de ejemplo estan clasificados en `articles/` segun el tipo de resultado esperado. Detalle: `articles/README.md`.
 
-| Orden | Objetivo | Entrada | Flags |
-|-------|----------|---------|-------|
-| 1 | Proteina + agrotoxico | DOI `10.3389/fphys.2020.00819` | `--skip-blast --no-save-pdf` |
-| 2 | Proteina + homologos humanos | `articles\proteina_y_homologos\in-11-342.pdf` | `--blast-mode local` |
-| 3 | Limite del sistema (salida pobre a proposito) | `articles\solo_agrotoxicos\...` o DOI ACS | `--skip-blast` |
+| Tipo de caso | Entrada | Flags tipicos |
+|--------------|---------|---------------|
+| Proteina + agrotoxico | DOI `10.3389/fphys.2020.00819` | `--skip-blast --no-save-pdf` |
+| Proteina + homologos humanos | `articles\proteina_y_homologos\in-11-342.pdf` | `--blast-mode local` |
+| Solo agrotoxicos | `articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf` | `--skip-blast` |
+| DOI sin PDF | DOI `10.1021/acs.jafc.4c03368` | `--skip-blast --no-save-pdf` |
 
 ```powershell
-tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\demo\proteina_agro
-tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\demo\homologos
-tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\demo\solo_agro
+tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output\casos\proteina_agro
+tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\casos\homologos
+tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\casos\solo_agro
 ```
 
 ## Opciones principales
@@ -98,14 +99,14 @@ tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --
 
 Por defecto, si no se usa `--skip-blast`, la herramienta intenta BLAST remoto mediante NCBI. Ese modo puede tardar varios minutos y depende del servicio externo.
 
-Para demos y pruebas repetibles se recomienda BLAST local:
+Para pruebas repetibles conviene BLAST local:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
 tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
 ```
 
-Durante desarrollo, usar `--skip-blast` para validar parser, Crossref, UniProt y PubChem sin esperar BLAST.
+Con `--skip-blast` se evaluan parser, Crossref, UniProt y PubChem sin ejecutar BLAST.
 
 ## Salidas
 
@@ -118,9 +119,9 @@ agrotoxicos         # compuestos + PubChem
 homologos_humanos   # BLASTp (si no se omite)
 ```
 
-Ejemplos versionados en `outputs/examples/` — ver `outputs/examples/README.md`.
+JSON de referencia en `outputs/examples/` (ver `outputs/examples/README.md`).
 
-Las corridas locales de trabajo van a `output/` (ignorada por git).
+Las corridas locales de trabajo se guardan en `output/` (ignorada por git).
 
 ## Documentacion tecnica
 
@@ -134,7 +135,7 @@ docs/architecture.md
 pytest -q
 ```
 
-Los tests unitarios usan mocks para evitar llamadas reales a servicios externos. Hay una prueba de BLAST local que se saltea si no esta el binario y la base local.
+Los tests unitarios usan mocks para evitar llamadas reales a servicios externos. Hay una prueba de BLAST local que se saltea si no estan el binario y la base local.
 
 ## Build del paquete
 
@@ -157,12 +158,12 @@ src/
   models/
   services/
   utils/
-articles/                      # PDFs de prueba por tipo de resultado esperado
+articles/                      # articulos de ejemplo por tipo de resultado
   proteina_y_agro/             # OBP/CSP + insecticidas
   proteina_y_homologos/        # lipocalina + BLAST a humanos
   solo_agrotoxicos/            # toxicologia sin proteina del dominio
-  otros/                       # no usar como demo principal
-outputs/examples/              # JSON de ejemplo versionados
+  otros/                       # material adicional
+outputs/examples/              # JSON de referencia
 scripts/
 tests/
 docs/
@@ -173,7 +174,7 @@ data/                          # corpus e2e y (local) BLAST
 - `src/services`: Crossref, UniProt, PubChem, BLAST, seleccion de candidatos.
 - `src/models`: modelos del JSON.
 - `src/utils`: parser de PDFs.
-- `articles`: material de prueba y demo (ver `articles/README.md`).
+- `articles`: articulos de ejemplo (ver `articles/README.md`).
 - `outputs/examples`: salidas de referencia.
 - `scripts`: helpers (BLAST local, etc.).
 - `tests`: unitarios y empaquetado.
