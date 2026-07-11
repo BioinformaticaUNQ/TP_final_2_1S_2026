@@ -1,5 +1,15 @@
 # Trabajo Practico Final - Introduccion a la Bioinformatica
 
+Trabajo practico final de la materia **Introduccion a la Bioinformatica**, 1er cuatrimestre de 2026, Universidad Nacional de Quilmes.
+
+**Grupo 2**
+
+| Participante |
+|--------------|
+| Acosta, Federico |
+| Fuentes, Jeremias |
+| Aguero, Fernando |
+
 Herramienta de linea de comandos para procesar bibliografia cientifica sobre interacciones entre proteinas tipo lipocalina/OBP/CSP y agrotoxicos. A partir de un PDF, un directorio de PDFs o un DOI, genera un JSON por articulo con metadatos, proteinas candidatas, compuestos investigados y homologos humanos cuando se ejecuta BLAST.
 
 ## Requisitos
