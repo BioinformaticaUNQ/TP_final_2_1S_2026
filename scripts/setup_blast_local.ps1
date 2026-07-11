@@ -49,4 +49,6 @@ Write-Host ""
 Write-Host "BLAST local listo."
 & $Blastp -version
 Write-Host ""
-Write-Host "Probar: tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local"
+Write-Host "Variables de esta sesion: BLASTP_BIN, HUMAN_PROTEOME_DB, BLAST_MODE=local"
+Write-Host "Probar en esta misma consola:"
+Write-Host "  tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local"

@@ -7,6 +7,7 @@ Herramienta de linea de comandos para procesar bibliografia cientifica sobre int
 - Python 3.13 o superior.
 - Windows PowerShell para los comandos de ejemplo.
 - Conexion a internet para Crossref, UniProt, PubChem, descarga de PDFs por DOI y BLAST remoto.
+  Crossref/PubChem/UniProt suelen sumar varios segundos por consulta; un DOI con PDF remoto puede demorar mas.
 
 El proyecto se empaqueta con `setuptools` desde `pyproject.toml`. Al instalarlo con `pip`, queda disponible el comando:
 
@@ -68,6 +69,8 @@ Si el PDF no se puede descargar, la herramienta genera un JSON con metadatos de 
 tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --output-dir output\manual_doi_fallback
 ```
 
+La corrida termina cuando aparece `JSON generado: ...` en la consola.
+
 ## Casos de prueba de referencia
 
 Los articulos de ejemplo estan clasificados en `articles/` segun el tipo de resultado esperado. Detalle: `articles/README.md`.
@@ -99,14 +102,14 @@ tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --
 
 Por defecto, si no se usa `--skip-blast`, la herramienta intenta BLAST remoto mediante NCBI. Ese modo puede tardar varios minutos y depende del servicio externo.
 
-Para pruebas repetibles conviene BLAST local:
+Para pruebas repetibles conviene BLAST local. Ejecutar el setup y la CLI en la misma sesion de PowerShell (el script define `BLASTP_BIN` y `HUMAN_PROTEOME_DB` para esa sesion). Si `data\blast` y `data\db` ya existen, el setup no vuelve a descargar:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_blast_local.ps1
 tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --output-dir output\blast_local_test
 ```
 
-Con `--skip-blast` se evaluan parser, Crossref, UniProt y PubChem sin ejecutar BLAST.
+Con `--skip-blast` no se ejecuta BLAST; Crossref, UniProt y PubChem siguen usando red.
 
 ## Salidas
 
@@ -119,9 +122,9 @@ agrotoxicos         # compuestos + PubChem
 homologos_humanos   # BLASTp (si no se omite)
 ```
 
-JSON de referencia en `outputs/examples/` (ver `outputs/examples/README.md`).
+Algunos campos (funcion, afinidad, PDB) quedan vacios si no hay dato en el articulo o en la API. BLAST reporta hasta 15 hits o los que superen el umbral.
 
-Las corridas locales de trabajo se guardan en `output/` (ignorada por git).
+JSON de referencia en `outputs/examples/` (ver `outputs/examples/README.md`). Las corridas propias van a `output/` (ignorada por git); no es la misma carpeta que `outputs/examples/`.
 
 ## Documentacion tecnica
 

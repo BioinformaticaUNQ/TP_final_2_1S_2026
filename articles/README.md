@@ -2,14 +2,15 @@
 
 PDFs y DOI de prueba agrupados segun el tipo de resultado esperado del pipeline.
 
-Cada corrida genera un JSON con cuatro secciones (cuando el articulo y las APIs lo permiten):
+Cada corrida genera un JSON con cuatro secciones (cuando el articulo y las APIs lo permiten).
+Las consultas externas pueden demorar; el indicador de fin es el mensaje `JSON generado`.
 
 | Seccion del JSON | Contenido |
 |------------------|-----------|
 | `articulo` | DOI, titulo, autores, anio, revista |
 | `proteinas` | Proteina del organismo modelo, UniProt, funcion si UniProt la publica |
 | `agrotoxicos` | Compuestos, familia, SMILES, LogP; afinidad solo si el texto la asocia de forma unívoca |
-| `homologos_humanos` | Hits BLASTp contra el proteoma humano |
+| `homologos_humanos` | Hits BLASTp contra el proteoma humano (hasta 15 o los disponibles) |
 
 ---
 
@@ -65,7 +66,7 @@ Material adicional (preprint, supporting information, dominio mixto). No son cas
 
 ### DOI sin PDF
 
-Si el publisher no entrega el PDF, la salida conserva metadatos de Crossref y deja vacias las secciones que dependen del texto completo.
+Si el publisher no entrega el PDF (p. ej. HTTP 403), la salida conserva metadatos de Crossref y deja vacias las secciones que dependen del texto completo.
 
 ```powershell
 tp-bioinfo 10.1021/acs.jafc.4c03368 --skip-blast --no-save-pdf --output-dir output\casos\fallback

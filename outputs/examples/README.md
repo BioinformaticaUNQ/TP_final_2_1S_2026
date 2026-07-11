@@ -13,11 +13,11 @@ Generados con el pipeline actual (filtro de organismo, ranking de la proteina pr
 | `pdf_agrotoxicos_atrazine.json` | `articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf` | Agrotoxicos sin proteinas del dominio |
 | `doi_fallback_crossref.json` | DOI `10.1021/acs.jafc.4c03368` | Solo metadatos Crossref (PDF no disponible) |
 
-## Limitaciones observadas en estos ejemplos
+## Notas
 
-- En el ejemplo BLAST, la cantidad de homologos depende de los hits del proteoma local (puede ser menor a 15).
-- Con varios agrotoxicos, la afinidad puede quedar vacia si no hay asociacion unívoca en el texto.
-- `funcion_biologica` queda vacia cuando la entrada UniProt no incluye ese comentario.
+- Homologos: hasta 15 o los hits del proteoma local por encima del umbral.
+- Afinidad y `funcion_biologica` solo si hay dato confiable en el texto o en UniProt.
+- Reproducir una corrida propia escribe en `output/`; estos archivos viven en `outputs/examples/`.
 
 ## Reproduccion
 

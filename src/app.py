@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 from pathlib import Path
 
 import click
+from loguru import logger
 
 from models import Agrotoxico, Articulo, ResultadoArticulo
 from utils.pdf_parser import PdfInput, parse_pdf
@@ -21,6 +23,11 @@ from services.uniprot_service import fetch_protein, fetch_sequence
 DOI_RE = re.compile(r"^10\.\d{4,9}/[^\s]+$")
 DOI_SAFE_RE = re.compile(r"[^A-Za-z0-9._-]+")
 MAX_HOMOLOGOS_TOTALES = 15
+
+
+def _configure_logging() -> None:
+    logger.remove()
+    logger.add(sys.stdout, level="INFO")
 
 
 class InputType(click.ParamType):
@@ -266,6 +273,7 @@ def procesar_pdf(
     help="Con DOI: analiza el PDF en memoria sin guardarlo en disco.",
 )
 def main(source, output_dir, skip_blast, blast_mode, pdf_dir, no_save_pdf):
+    _configure_logging()
     ejecutar_blast = not skip_blast
     match source["kind"]:
         case "doi":
