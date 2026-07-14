@@ -163,6 +163,54 @@ python -m venv .venv_packaging_test
 .\.venv_packaging_test\Scripts\tp-bioinfo.exe --help
 ```
 
+## Docker
+
+Alternativa a la instalacion con `venv`: correr la CLI dentro de un contenedor. Requiere Docker Desktop en ejecucion. La imagen instala el paquete (`tp-bioinfo`), incluye los PDFs de `articles/` para los casos de prueba y usa BLAST remoto por defecto. Los JSON se escriben en `/app/output`; montando un volumen quedan en `.\output` del host.
+
+### Un solo comando (script wrapper)
+
+`scripts\docker_tp.ps1` construye la imagen la primera vez (si no existe) y despues solo la reutiliza. Se ejecuta con los mismos argumentos de la CLI:
+
+```powershell
+.\scripts\docker_tp.ps1 --help
+
+# PDF individual
+.\scripts\docker_tp.ps1 articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+
+# Directorio de PDFs
+.\scripts\docker_tp.ps1 articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+
+# DOI (usa la red del contenedor)
+.\scripts\docker_tp.ps1 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+### Paso a paso manual
+
+```powershell
+# 1. Construir la imagen (una vez)
+docker build -t tp-bioinfo:latest .
+
+# 2. Verificar la CLI
+docker run --rm tp-bioinfo:latest --help
+
+# 3. Los tres casos de uso (el volumen deja los JSON en .\output del host)
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+### Con docker compose
+
+`docker compose run` construye la imagen automaticamente la primera vez; el volumen `.\output` ya esta definido en `docker-compose.yml`:
+
+```powershell
+docker compose run --rm tp-bioinfo articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+docker compose run --rm tp-bioinfo articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+docker compose run --rm tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+En todos los casos el fin de la corrida es el mensaje `JSON generado: output\docker_*\...`, y el archivo queda en `.\output\docker_*\` del host. Los comandos usan sintaxis de PowerShell (`${PWD}\output:/app/output`); ejecutarlos desde Git Bash requiere `MSYS_NO_PATHCONV=1` para que el volumen se monte correctamente.
+
 ## Estructura
 
 ```text

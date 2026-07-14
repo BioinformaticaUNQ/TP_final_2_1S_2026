@@ -1,6 +1,8 @@
 services:
-  app:
+  tp-bioinfo:
     build: .
+    image: tp-bioinfo:latest
     container_name: bioinf_tp_app
+    # Los JSON generados en /app/output quedan disponibles en ./output del host.
     volumes:
-      - .:/app
+      - ./output:/app/output
