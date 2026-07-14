@@ -163,6 +163,28 @@ def test_cli_directorio_procesa_solo_pdfs_ordenados(monkeypatch, tmp_path):
     assert result.output.count("JSON generado:") == 2
 
 
+def test_cli_directorio_continua_si_un_pdf_falla(monkeypatch, tmp_path):
+    (tmp_path / "a.pdf").write_bytes(b"%PDF-1.4")
+    (tmp_path / "b.pdf").write_bytes(b"%PDF-1.4")
+    (tmp_path / "c.pdf").write_bytes(b"%PDF-1.4")
+    output_dir = tmp_path / "out"
+    procesados = []
+
+    def fake_procesar_pdf(path, output_dir, ejecutar_blast=True, blast_mode="remote"):
+        if path.name == "b.pdf":
+            raise ValueError("PDF corrupto")
+        procesados.append(path.name)
+        return output_dir / f"{path.stem}.json"
+
+    monkeypatch.setattr(app, "procesar_pdf", fake_procesar_pdf)
+
+    result = CliRunner().invoke(app.main, [str(tmp_path), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 0
+    assert procesados == ["a.pdf", "c.pdf"]
+    assert result.output.count("JSON generado:") == 2
+
+
 def test_cli_doi_guarda_metadatos_de_crossref(monkeypatch, tmp_path):
     saved = {}
 

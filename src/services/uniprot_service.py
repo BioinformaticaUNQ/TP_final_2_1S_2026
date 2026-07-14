@@ -1,34 +1,17 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
 
 import requests
 from loguru import logger
+
+from models.protein import ProteinaOrganismoModelo
 
 GENE_LIKE_RE = re.compile(
     r"^(?:[A-Z][a-z]{0,4})?(?:OBP|CSP|PBP|GOBP|ABP|LCN)\d+[a-zA-Z]?$",
     re.IGNORECASE,
 )
 SPECIES_PREFIX_RE = re.compile(r"^([A-Z][a-z]{1,4})((?:OBP|CSP|PBP|GOBP|ABP|LCN)\d+[a-zA-Z]?)$")
-
-
-@dataclass
-class ProteinaOrganismoModelo:
-    nombre_proteina: str
-    organismo: str | None = None
-    uniprot_id: str | None = None
-    pdb_code: str | None = None
-    funcion_biologica: str | None = None
-
-    def toJson(self):
-        return {
-            "Nombre proteina": self.nombre_proteina,
-            "Organismo": self.organismo,
-            "UniProt ID": self.uniprot_id,
-            "PDB code": self.pdb_code,
-            "Funcion biologica": self.funcion_biologica,
-        }
 
 
 class UniProtService:
@@ -86,9 +69,17 @@ class UniProtService:
             nombre_proteina=nombre,
             organismo=organism.get("scientificName"),
             uniprot_id=uniprot_id,
-            pdb_code=None,
+            pdb_code=self._extraer_pdb_code(first),
             funcion_biologica=funcion_biologica,
         )
+
+    @staticmethod
+    def _extraer_pdb_code(entry: dict) -> str | None:
+        """Primer codigo PDB del cross-reference de UniProt, si la proteina tiene estructura."""
+        for xref in entry.get("uniProtKBCrossReferences", []):
+            if xref.get("database") == "PDB" and xref.get("id"):
+                return xref["id"]
+        return None
 
     @staticmethod
     def _query_variants(nombre_proteina: str, organismo: str | None) -> list[str]:

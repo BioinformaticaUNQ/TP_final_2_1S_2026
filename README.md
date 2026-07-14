@@ -98,6 +98,22 @@ tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --outp
 tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\casos\solo_agro
 ```
 
+### Casos DOI recomendados (descargan el PDF y ejecutan el pipeline completo)
+
+Estos dos DOI descargan el PDF a disco, lo parsean y enriquecen con las bases externas. Se eligieron corriendo el pipeline sobre varios articulos open-access y quedandose con los que producen mas datos y menos campos vacios.
+
+| Caso recomendado | DOI | Que aporta |
+|------------------|-----|------------|
+| Maxima informacion (proteinas + agrotoxicos) | `10.3389/fphys.2022.924750` | 8 proteinas con UniProt (una con funcion biologica), 2 agrotoxicos con SMILES/LogP, metadatos completos |
+| Busqueda de homologos humanos | `10.4110/in.2011.11.6.342` | Lipocalina-2 (*Danio rerio*, UniProt Q0P4C2) y 3 homologos humanos por BLASTp (Lipocalin-15, PTGDS, AMBP) |
+
+```powershell
+tp-bioinfo 10.3389/fphys.2022.924750 --blast-mode remote --output-dir output\casos\mejor_caso --pdf-dir output\casos\mejor_caso\pdfs
+tp-bioinfo 10.4110/in.2011.11.6.342 --blast-mode remote --output-dir output\casos\homologos_humanos --pdf-dir output\casos\homologos_humanos\pdfs
+```
+
+Ningun articulo unico llena las cuatro secciones a la vez, y no es una falla de la herramienta sino del dominio: las OBP/CSP de insecto son familias especificas de insectos, por lo que BLASTp contra el proteoma humano no devuelve homologos; solo las lipocalinas (familia conservada) tienen homologos humanos, pero los articulos de lipocalinas suelen estudiar toxicidad y no la union a un agrotoxico puntual. Por eso se sugieren dos casos complementarios: uno para la historia proteina + agrotoxico y otro para la de homologos humanos.
+
 ## Opciones principales
 
 ```text
@@ -162,6 +178,54 @@ python -m venv .venv_packaging_test
 .\.venv_packaging_test\Scripts\python.exe -m pip install dist\tp_bioinfo-0.1.0-py3-none-any.whl
 .\.venv_packaging_test\Scripts\tp-bioinfo.exe --help
 ```
+
+## Docker
+
+Alternativa a la instalacion con `venv`: correr la CLI dentro de un contenedor. Requiere Docker Desktop en ejecucion. La imagen instala el paquete (`tp-bioinfo`), incluye los PDFs de `articles/` para los casos de prueba y usa BLAST remoto por defecto. Los JSON se escriben en `/app/output`; montando un volumen quedan en `.\output` del host.
+
+### Un solo comando (script wrapper)
+
+`scripts\docker_tp.ps1` construye la imagen la primera vez (si no existe) y despues solo la reutiliza. Se ejecuta con los mismos argumentos de la CLI:
+
+```powershell
+.\scripts\docker_tp.ps1 --help
+
+# PDF individual
+.\scripts\docker_tp.ps1 articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+
+# Directorio de PDFs
+.\scripts\docker_tp.ps1 articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+
+# DOI (usa la red del contenedor)
+.\scripts\docker_tp.ps1 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+### Paso a paso manual
+
+```powershell
+# 1. Construir la imagen (una vez)
+docker build -t tp-bioinfo:latest .
+
+# 2. Verificar la CLI
+docker run --rm tp-bioinfo:latest --help
+
+# 3. Los tres casos de uso (el volumen deja los JSON en .\output del host)
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+docker run --rm -v ${PWD}\output:/app/output tp-bioinfo:latest 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+### Con docker compose
+
+`docker compose run` construye la imagen automaticamente la primera vez; el volumen `.\output` ya esta definido en `docker-compose.yml`:
+
+```powershell
+docker compose run --rm tp-bioinfo articles/solo_agrotoxicos/acute_toxicity_atrazine.pdf --skip-blast --output-dir output/docker_pdf
+docker compose run --rm tp-bioinfo articles/proteina_y_agro --skip-blast --output-dir output/docker_dir
+docker compose run --rm tp-bioinfo 10.3389/fphys.2020.00819 --skip-blast --no-save-pdf --output-dir output/docker_doi
+```
+
+En todos los casos el fin de la corrida es el mensaje `JSON generado: output\docker_*\...`, y el archivo queda en `.\output\docker_*\` del host. Los comandos usan sintaxis de PowerShell (`${PWD}\output:/app/output`); ejecutarlos desde Git Bash requiere `MSYS_NO_PATHCONV=1` para que el volumen se monte correctamente.
 
 ## Estructura
 

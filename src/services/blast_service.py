@@ -26,6 +26,9 @@ class BlastService:
     DATABASE = "swissprot"
     PROGRAM = "blastp"
     ENTREZ_QUERY = "Homo sapiens[Organism]"
+    # Umbral de significancia: descarta hits que podrian ser azar (e-value alto).
+    # Se aplica en la busqueda (local y remota) y como filtro defensivo al parsear.
+    EVALUE_THRESHOLD = 1e-3
 
     def __init__(
         self,
@@ -73,6 +76,7 @@ class BlastService:
                 secuencia,
                 entrez_query=self.ENTREZ_QUERY,
                 hitlist_size=max_hits,
+                expect=self.EVALUE_THRESHOLD,
             )
             logger.success("Conexion con servidor NCBI exitosa.")
         except Exception as exc:
@@ -104,7 +108,7 @@ class BlastService:
                 "-outfmt",
                 "5",
                 "-evalue",
-                "1e-3",
+                str(self.EVALUE_THRESHOLD),
                 "-max_target_seqs",
                 str(max_hits),
                 "-num_threads",
@@ -125,11 +129,22 @@ class BlastService:
         total_alignments = len(blast_record.alignments)
         logger.info(
             f"Se encontraron {total_alignments} alineamientos en total. "
-            f"Procesando los mejores {min(max_hits, total_alignments)}."
+            f"Filtrando por e-value <= {self.EVALUE_THRESHOLD} y tomando los mejores {max_hits}."
         )
 
-        for idx, alignment in enumerate(blast_record.alignments[:max_hits], start=1):
+        # Los alineamientos vienen ordenados por e-value (mejor primero).
+        for idx, alignment in enumerate(blast_record.alignments, start=1):
+            if len(homologos) >= max_hits:
+                break
+
             hsp = alignment.hsps[0]
+            evalue = self.normalizar_evalue(hsp.expect)
+            if evalue is not None and evalue > self.EVALUE_THRESHOLD:
+                logger.debug(
+                    f"Hit #{idx} descartado por e-value {evalue} > {self.EVALUE_THRESHOLD} (no significativo)."
+                )
+                continue
+
             hit_def_raw = alignment.hit_def or ""
             uniprot_id = self.normalizar_uniprot_id(alignment.accession, alignment.hit_id)
             nombre = self.normalizar_nombre(hit_def_raw)
@@ -137,7 +152,6 @@ class BlastService:
             longitud_alineamiento = hsp.align_length or 1
             pct_identidad = round((hsp.identities / longitud_alineamiento) * 100, 2)
             pct_similitud = round((hsp.positives / longitud_alineamiento) * 100, 2)
-            evalue = self.normalizar_evalue(hsp.expect)
 
             logger.debug(
                 f"Hit #{idx}: ID={uniprot_id} | Nombre={nombre} | "

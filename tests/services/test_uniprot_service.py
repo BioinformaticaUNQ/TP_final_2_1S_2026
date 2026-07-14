@@ -86,3 +86,47 @@ def test_uniprot_service_descarga_secuencia_fasta(monkeypatch):
     )
 
     assert UniProtService().fetch_sequence("Q0P4C2") == "MKTAYIAKQRQISFVK"
+
+
+def test_extraer_pdb_code_devuelve_primer_pdb():
+    entry = {
+        "uniProtKBCrossReferences": [
+            {"database": "AlphaFoldDB", "id": "P05090"},
+            {"database": "PDB", "id": "2HZQ"},
+            {"database": "PDB", "id": "2HZR"},
+        ]
+    }
+
+    assert UniProtService._extraer_pdb_code(entry) == "2HZQ"
+
+
+def test_extraer_pdb_code_sin_estructura_devuelve_none():
+    assert UniProtService._extraer_pdb_code({"uniProtKBCrossReferences": [{"database": "AlphaFoldDB", "id": "X"}]}) is None
+    assert UniProtService._extraer_pdb_code({}) is None
+
+
+def test_uniprot_service_completa_pdb_code_desde_cross_references(monkeypatch):
+    payload = {
+        "results": [
+            {
+                "primaryAccession": "P05090",
+                "proteinDescription": {"recommendedName": {"fullName": {"value": "Apolipoprotein D"}}},
+                "organism": {"scientificName": "Homo sapiens"},
+                "comments": [],
+                "uniProtKBCrossReferences": [
+                    {"database": "PDB", "id": "2HZQ"},
+                    {"database": "PDB", "id": "2HZR"},
+                ],
+            }
+        ]
+    }
+    monkeypatch.setattr(
+        requests,
+        "get",
+        lambda url, params=None, timeout=30: MockResponse(200, payload),
+    )
+
+    proteina = UniProtService().fetch_protein("Apolipoprotein D", "Homo sapiens")
+
+    assert proteina is not None
+    assert proteina.pdb_code == "2HZQ"

@@ -1,6 +1,8 @@
 .git
 .gitignore
 .venv
+.venv_test
+.venv_packaging_test
 __pycache__
 .pytest_cache
 .mypy_cache
@@ -10,3 +12,14 @@ __pycache__
 *.pyo
 *.pyd
 *.log
+# Pesados / no necesarios para la imagen (BLAST local, salidas, corpus, docs, tests).
+data/
+output/
+outputs/
+tests/
+docs/
+scripts/
+dist/
+build/
+*.egg-info
+*.pdf
