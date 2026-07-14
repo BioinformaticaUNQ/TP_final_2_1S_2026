@@ -5,5 +5,4 @@ pandas
 pdfplumber
 PyPDF2
 requests
-tabula-py
 pytest
