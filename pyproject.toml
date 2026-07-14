@@ -12,9 +12,7 @@ dependencies = [
     "biopython>=1.84",
     "click>=8.1",
     "loguru",
-    "pandas",
     "pdfplumber",
-    "PyPDF2",
     "requests",
 ]
 
