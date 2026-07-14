@@ -69,9 +69,17 @@ class UniProtService:
             nombre_proteina=nombre,
             organismo=organism.get("scientificName"),
             uniprot_id=uniprot_id,
-            pdb_code=None,
+            pdb_code=self._extraer_pdb_code(first),
             funcion_biologica=funcion_biologica,
         )
+
+    @staticmethod
+    def _extraer_pdb_code(entry: dict) -> str | None:
+        """Primer codigo PDB del cross-reference de UniProt, si la proteina tiene estructura."""
+        for xref in entry.get("uniProtKBCrossReferences", []):
+            if xref.get("database") == "PDB" and xref.get("id"):
+                return xref["id"]
+        return None
 
     @staticmethod
     def _query_variants(nombre_proteina: str, organismo: str | None) -> list[str]:
