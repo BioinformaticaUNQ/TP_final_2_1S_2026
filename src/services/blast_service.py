@@ -193,10 +193,6 @@ class BlastService:
             return 0.0
         return float(f"{evalue:.6g}")
 
-    @staticmethod
-    def _extraer_uniprot_id(accession: str, hit_id: str) -> str:
-        return BlastService.normalizar_uniprot_id(accession, hit_id)
-
 
 def buscar_homologos_humanos(
     secuencia: str,
