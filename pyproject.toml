@@ -16,7 +16,6 @@ dependencies = [
     "pdfplumber",
     "PyPDF2",
     "requests",
-    "tabula-py",
 ]
 
 [project.scripts]
