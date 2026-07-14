@@ -267,14 +267,38 @@ pip install dist\tp_bioinfo-0.1.0-py3-none-any.whl
 
 ## Tests
 
-La suite esta en `tests/`.
+La suite esta en `tests/`, organizada en subcarpetas que espejan `src/`. Los fixtures compartidos viven en `tests/conftest.py`.
+
+```text
+tests/
+  conftest.py                              # fixtures y mocks compartidos
+  test_app.py                              # CLI y armado de resultados (modulo app)
+  test_packaging.py                        # configuracion de empaquetado
+  test_smoke.py                            # smoke basico
+  models/                                  # un archivo por clase de src/models
+    test_article.py
+    test_base.py
+    test_candidatos_articulo_model.py
+    test_compound.py
+    test_homologo.py
+    test_protein.py
+    test_resultado_articulo.py
+  services/                                # un archivo por servicio de src/services
+    test_crossref_service.py
+    test_uniprot_service.py
+    test_pubchem_service.py
+    test_blast_service.py                  # normalizacion BLAST + prueba opcional local
+    test_candidatos_articulo.py
+  utils/
+    test_pdf_parser.py
+```
 
 Cobertura principal:
 
 - `test_app.py`: CLI, entrada DOI/PDF/directorio, armado de resultados y guardado JSON.
-- `test_services.py`: Crossref, descarga PDF, PubChem, UniProt con mocks.
-- `test_pdf_parser.py`: extraccion de DOI, titulo, organismos, proteinas, agrotoxicos, afinidades y PDB.
-- `test_blast_local.py`: normalizacion de resultados BLAST y prueba opcional con BLAST local.
+- `models/`: construccion, defaults y serializacion (`toJson`/`to_dict`) de cada modelo.
+- `services/`: Crossref, descarga PDF, PubChem, UniProt, candidatos y BLAST con mocks.
+- `utils/test_pdf_parser.py`: extraccion de DOI, titulo, organismos, proteinas, agrotoxicos, afinidades y PDB.
 - `test_packaging.py`: configuracion de empaquetado.
 
 Los tests unitarios no dependen de red. La prueba de BLAST local se saltea si no existe el binario o la base local.
