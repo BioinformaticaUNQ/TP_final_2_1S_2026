@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import re
 import time
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import requests
 from loguru import logger
+
+from models.article import Articulo
 
 _HTML_TAG_RE = re.compile(r"<[^>]+>")
 
@@ -14,24 +15,6 @@ _HTML_TAG_RE = re.compile(r"<[^>]+>")
 def _strip_html(texto: str) -> str:
     limpio = _HTML_TAG_RE.sub("", texto)
     return re.sub(r"\s+", " ", limpio).strip()
-
-
-@dataclass
-class Articulo:
-    doi: str
-    titulo: str | None = None
-    autores: list[str] = field(default_factory=list)
-    anio: int | None = None
-    revista: str | None = None
-
-    def toJson(self):
-        return {
-            "DOI": self.doi,
-            "Titulo": self.titulo,
-            "Autores": self.autores,
-            "Anio de Publicacion": self.anio,
-            "Revista": self.revista,
-        }
 
 
 class CrossrefService:
