@@ -1,0 +1,91 @@
+{
+  "articulo": {
+    "doi": "10.4110/in.2011.11.6.342",
+    "titulo": "Modulation of Glial and Neuronal Migration by Lipocalin-2 in Zebrafish",
+    "autores": [
+      "Ho Kim",
+      "Shinrye Lee",
+      "Hae-Chul Park",
+      "Won-Ha Lee",
+      "Myung-Shik Lee",
+      "Kyoungho Suk"
+    ],
+    "anio": 2011,
+    "revista": "Immune Network"
+  },
+  "proteinas": [
+    {
+      "nombre": "Lipocalin 2",
+      "organismo": "Danio rerio",
+      "uniprot_id": "Q0P4C2",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "lipocalin 21",
+      "organismo": "Danio rerio",
+      "uniprot_id": "A0A8M1PC83",
+      "pdb_code": null,
+      "funcion_biologica": null
+    }
+  ],
+  "agrotoxicos": [],
+  "homologos_humanos": [
+    {
+      "uniprot_id": "Q6UWW0",
+      "nombre": "Lipocalin-15",
+      "pct_identidad": 28.73,
+      "pct_similitud": 51.38,
+      "evalue": 2.07741e-21
+    },
+    {
+      "uniprot_id": "P41222",
+      "nombre": "Prostaglandin-H2 D-isomerase",
+      "pct_identidad": 28.73,
+      "pct_similitud": 48.07,
+      "evalue": 5.48661e-21
+    },
+    {
+      "uniprot_id": "P02760",
+      "nombre": "Protein AMBP",
+      "pct_identidad": 24.39,
+      "pct_similitud": 50.0,
+      "evalue": 1.01866e-14
+    },
+    {
+      "uniprot_id": "P07360",
+      "nombre": "Complement component C8 gamma chain",
+      "pct_identidad": 22.84,
+      "pct_similitud": 47.53,
+      "evalue": 1.12461e-12
+    },
+    {
+      "uniprot_id": "P09466",
+      "nombre": "Glycodelin",
+      "pct_identidad": 25.32,
+      "pct_similitud": 46.2,
+      "evalue": 4.17434e-08
+    },
+    {
+      "uniprot_id": "Q6ZST4",
+      "nombre": "Lipocalin-like 1 protein",
+      "pct_identidad": 27.08,
+      "pct_similitud": 45.83,
+      "evalue": 2.2515e-05
+    },
+    {
+      "uniprot_id": "P80188",
+      "nombre": "Neutrophil gelatinase-associated lipocalin",
+      "pct_identidad": 23.46,
+      "pct_similitud": 41.98,
+      "evalue": 0.000101183
+    },
+    {
+      "uniprot_id": "Q9NY56",
+      "nombre": "Odorant-binding protein 2a",
+      "pct_identidad": 24.28,
+      "pct_similitud": 41.04,
+      "evalue": 0.000151934
+    }
+  ]
+}

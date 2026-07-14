@@ -1,0 +1,6 @@
+services:
+  app:
+    build: .
+    container_name: bioinf_tp_app
+    volumes:
+      - .:/app

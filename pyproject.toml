@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tp-bioinfo"
+version = "0.1.0"
+description = "Trabajo practico de bioinformatica con CLI, Crossref y parsing de PDFs"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "biopython>=1.84",
+    "click>=8.1",
+    "loguru",
+    "pdfplumber",
+    "requests",
+]
+
+[project.scripts]
+tp-bioinfo = "app:main"
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
+[tool.setuptools]
+py-modules = ["app"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["models*", "services*", "utils*"]

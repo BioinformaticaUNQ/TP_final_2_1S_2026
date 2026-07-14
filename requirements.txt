@@ -1,0 +1,6 @@
+biopython>=1.84
+click>=8.1
+loguru
+pdfplumber
+requests
+pytest

@@ -1,0 +1,119 @@
+{
+  "articulo": {
+    "doi": "10.1016/j.ecoenv.2025.119210",
+    "titulo": "Overexpression of multiple odorant binding and chemosensory protein genes contributed to multi-insecticide resistance in Aphis gossypii Glover",
+    "autores": [
+      "Tiantian Wang",
+      "Haixiang Lv",
+      "Chengfeng Zheng",
+      "Chengzhi Yang",
+      "Yang Huang",
+      "Xuchao Li",
+      "Jianhong Li",
+      "Kangsheng Ma"
+    ],
+    "anio": 2025,
+    "revista": "Ecotoxicology and Environmental Safety"
+  },
+  "proteinas": [
+    {
+      "nombre": "CSP1",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "B7TVG4",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP2",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1SZ17",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP6",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1JPA1",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP7",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1SSQ2",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP3",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KDI0",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP7",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KQ25",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "OBP9",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1K8F6",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "CSP18",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "A0A9P0IXM4",
+      "pdb_code": null,
+      "funcion_biologica": null
+    },
+    {
+      "nombre": "PxCSP1",
+      "organismo": "Aphis gossypii",
+      "uniprot_id": "M1KDZ3",
+      "pdb_code": null,
+      "funcion_biologica": null
+    }
+  ],
+  "agrotoxicos": [
+    {
+      "nombre_comun": "chlorpyrifos",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOP(=S)(OCC)OC1=NC(=C(C=C1Cl)Cl)Cl",
+      "logP": 5.3,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "imidacloprid",
+      "familia_quimica": "Neonicotinoide",
+      "smiles": "C1CN(/C(=N/[N+](=O)[O-])/N1)CC2=CN=C(C=C2)Cl",
+      "logP": 1.2,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    },
+    {
+      "nombre_comun": "malathion",
+      "familia_quimica": "Organofosforado",
+      "smiles": "CCOC(=O)CC(C(=O)OCC)SP(=S)(OC)OC",
+      "logP": 2.4,
+      "tipo_afinidad": null,
+      "valor_afinidad": null,
+      "unidad_afinidad": null,
+      "metodo_experimental": null,
+      "fuente_dato": "PubChem PUG REST"
+    }
+  ],
+  "homologos_humanos": []
+}
