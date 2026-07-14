@@ -98,6 +98,22 @@ tp-bioinfo articles\proteina_y_homologos\in-11-342.pdf --blast-mode local --outp
 tp-bioinfo articles\solo_agrotoxicos\acute_toxicity_atrazine.pdf --skip-blast --output-dir output\casos\solo_agro
 ```
 
+### Casos DOI recomendados (descargan el PDF y ejecutan el pipeline completo)
+
+Estos dos DOI descargan el PDF a disco, lo parsean y enriquecen con las bases externas. Se eligieron corriendo el pipeline sobre varios articulos open-access y quedandose con los que producen mas datos y menos campos vacios.
+
+| Caso recomendado | DOI | Que aporta |
+|------------------|-----|------------|
+| Maxima informacion (proteinas + agrotoxicos) | `10.3389/fphys.2022.924750` | 8 proteinas con UniProt (una con funcion biologica), 2 agrotoxicos con SMILES/LogP, metadatos completos |
+| Busqueda de homologos humanos | `10.4110/in.2011.11.6.342` | Lipocalina-2 (*Danio rerio*, UniProt Q0P4C2) y 3 homologos humanos por BLASTp (Lipocalin-15, PTGDS, AMBP) |
+
+```powershell
+tp-bioinfo 10.3389/fphys.2022.924750 --blast-mode remote --output-dir output\casos\mejor_caso --pdf-dir output\casos\mejor_caso\pdfs
+tp-bioinfo 10.4110/in.2011.11.6.342 --blast-mode remote --output-dir output\casos\homologos_humanos --pdf-dir output\casos\homologos_humanos\pdfs
+```
+
+Ningun articulo unico llena las cuatro secciones a la vez, y no es una falla de la herramienta sino del dominio: las OBP/CSP de insecto son familias especificas de insectos, por lo que BLASTp contra el proteoma humano no devuelve homologos; solo las lipocalinas (familia conservada) tienen homologos humanos, pero los articulos de lipocalinas suelen estudiar toxicidad y no la union a un agrotoxico puntual. Por eso se sugieren dos casos complementarios: uno para la historia proteina + agrotoxico y otro para la de homologos humanos.
+
 ## Opciones principales
 
 ```text
