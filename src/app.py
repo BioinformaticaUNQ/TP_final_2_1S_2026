@@ -334,14 +334,26 @@ def main(source, output_dir, skip_blast, blast_mode, pdf_dir, no_save_pdf):
             if not pdfs:
                 click.echo(f"No se encontraron PDFs en {source['path']}")
                 return
+            fallidos: list[str] = []
             for pdf_path in pdfs:
-                output_path = procesar_pdf(
-                    pdf_path,
-                    output_dir,
-                    ejecutar_blast=ejecutar_blast,
-                    blast_mode=blast_mode,
-                )
+                try:
+                    output_path = procesar_pdf(
+                        pdf_path,
+                        output_dir,
+                        ejecutar_blast=ejecutar_blast,
+                        blast_mode=blast_mode,
+                    )
+                except Exception as exc:
+                    fallidos.append(pdf_path.name)
+                    click.echo(
+                        f"Aviso: se omitio '{pdf_path.name}' por un error al procesarlo: {exc}",
+                        err=True,
+                    )
+                    continue
                 click.echo(f"JSON generado: {output_path}")
+            click.echo(f"Directorio procesado: {len(pdfs) - len(fallidos)}/{len(pdfs)} PDFs con JSON.")
+            if fallidos:
+                click.echo(f"Omitidos por error: {', '.join(fallidos)}", err=True)
         case "file":
             click.echo(f"Archivo detectado: {source['path']}")
 
